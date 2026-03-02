@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up AlphaESS Modbus",
+        "description": "Configure connection to your AlphaESS inverter",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "model": "Inverter model",
+          "ac_limit_kw": "Inverter AC limit (kW)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to inverter",
+      "invalid_connection": "Please enter a valid host / IP address",
+      "invalid_model": "Please select an inverter model",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AlphaESS Modbus options",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "model": "Inverter model",
+          "ac_limit_kw": "Inverter AC limit (kW)"
+        }
+      }
+    }
+  }
+}

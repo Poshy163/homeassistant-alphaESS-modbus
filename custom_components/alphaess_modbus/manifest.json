@@ -1,0 +1,15 @@
+{
+  "domain": "alphaess_modbus",
+  "name": "AlphaESS Modbus",
+  "codeowners": [
+    "@Poshy163"
+  ],
+  "config_flow": true,
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Poshy163/homeassistant-alphaESS-modbus/issues",
+  "loggers": [
+    "pymodbus"
+  ],
+  "version": "0.0.1"
+}
