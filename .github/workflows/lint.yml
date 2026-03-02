@@ -13,4 +13,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3
         with:
-          src: custom_components/alphaess_modbus
+          src: "custom_components/alphaess_modbus"
