@@ -6,12 +6,15 @@ from dataclasses import dataclass, field
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DEFAULT_PARAMS, DOMAIN
 from .coordinator import AlphaESSModbusCoordinator
 from .hub import AlphaESSModbusHub
 from .services import async_register_services
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,

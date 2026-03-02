@@ -5,7 +5,7 @@ import logging
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CORE_SENSOR_DESCRIPTIONS,
@@ -13,7 +13,6 @@ from .const import (
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DOMAIN,
     RegisterType,
-    AlphaESSModbusSensorDescription,
 )
 from .hub import AlphaESSModbusHub
 
