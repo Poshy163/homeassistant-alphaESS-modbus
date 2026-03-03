@@ -65,6 +65,9 @@ After migrating, you can delete `/config/packages/integration_alpha_ess.yaml`.
 It is no longer used by this integration and keeping it typically causes
 duplicate/legacy automations.
 
+You can also remove old AlphaESS-related entries from `secrets.yaml` that were
+only used by the legacy package configuration.
+
 Why: that legacy package contains direct `modbus.write_register` actions and can
 cause **Spook unknown action/entity** warnings in modern setups.
 
@@ -114,6 +117,7 @@ After restart:
 
 - [ ] Legacy package include removed from `configuration.yaml`
 - [ ] `/config/packages/integration_alpha_ess.yaml` deleted
+- [ ] Legacy AlphaESS `secrets.yaml` entries removed (if no longer used)
 - [ ] `custom_components/alphaess_modbus/automations_modern.yaml` included
 - [ ] Home Assistant restarted
 - [ ] No duplicate `AlphaESS` automations (for example `_2` suffix)
@@ -342,6 +346,13 @@ This package uses only integration services from
 `alphaess_modbus` (for example `force_charge`, `dispatch`,
 `dispatch_reset`, `sync_datetime`, `set_charging_periods`,
 `set_discharging_periods`).
+
+In plain terms:
+- **New way (recommended):** automations call `alphaess_modbus.*` services provided by this integration.
+- **Old way (legacy package):** automations call raw `modbus.write_register` actions directly.
+
+Because this package uses the new way only, it does not depend on the old
+package action wiring and avoids those legacy unknown-action repair warnings.
 
 ### Home Assistant setup
 
