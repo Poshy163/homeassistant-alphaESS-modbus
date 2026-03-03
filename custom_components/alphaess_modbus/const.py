@@ -5,16 +5,6 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import (
-    PERCENTAGE,
-    UnitOfElectricCurrent,
-    UnitOfElectricPotential,
-    UnitOfEnergy,
-    UnitOfFrequency,
-    UnitOfPower,
-    UnitOfTemperature,
-    UnitOfTime,
-)
 
 # ───────────────────────── Domain & integration ──────────────────────────
 
