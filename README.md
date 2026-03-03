@@ -50,6 +50,75 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 6. Go to **Settings → Devices & Services → Add Integration** and search for **AlphaESS Modbus**.
 7. Enter your inverter's IP address, port, slave ID, choose your inverter model, and submit.
 
+## Migration from projects.hillviewlodge.ie
+
+If you currently run Axel's package-based setup from
+https://projects.hillviewlodge.ie/alphaess/, use this migration path.
+
+### 1) Remove legacy package includes
+
+From your Home Assistant `configuration.yaml`, remove/disable includes that load
+the legacy full package (for example `integration_alpha_ess.yaml` from
+`/config/packages`).
+
+After migrating, you can delete `/config/packages/integration_alpha_ess.yaml`.
+It is no longer used by this integration and keeping it typically causes
+duplicate/legacy automations.
+
+Why: that legacy package contains direct `modbus.write_register` actions and can
+cause **Spook unknown action/entity** warnings in modern setups.
+
+### 2) Install this integration via HACS
+
+Follow the HACS install steps above and configure the integration from
+**Settings → Devices & Services**.
+
+### 3) Keep your dashboards, then update gradually
+
+- You can keep existing dashboard YAML while migrating.
+- This repo includes [`alphaess_view.yaml`](alphaess_view.yaml) and custom cards
+   if you want to switch to the maintained dashboard layout later.
+
+### 4) Use the modern automations package (optional but recommended)
+
+If you want packaged automations in HA (visible in **Automations & scenes**),
+include:
+
+```yaml
+homeassistant:
+   packages:
+      alphaess_automations_modern: !include custom_components/alphaess_modbus/automations_modern.yaml
+```
+
+This package is shipped with the integration and uses integration services
+(`alphaess_modbus.*`) instead of legacy direct Modbus write actions.
+
+### 5) Restart and clean duplicates
+
+After restart:
+
+- Search automations for `AlphaESS`.
+- Remove/disable duplicate legacy entries (often shown with `_2` suffix).
+- If Spook still reports unknown legacy entities/actions, a legacy package include
+   is still active somewhere.
+
+### 6) Keep updates simple
+
+- HACS updates this integration and its bundled files (including
+   [`custom_components/alphaess_modbus/automations_modern.yaml`](custom_components/alphaess_modbus/automations_modern.yaml)).
+- The workflow in
+   [`.github/workflows/sync-yaml.yml`](.github/workflows/sync-yaml.yml)
+   auto-syncs upstream YAML and regenerates the modern automations package for PRs.
+
+### Quick post-migration checklist
+
+- [ ] Legacy package include removed from `configuration.yaml`
+- [ ] `/config/packages/integration_alpha_ess.yaml` deleted
+- [ ] `custom_components/alphaess_modbus/automations_modern.yaml` included
+- [ ] Home Assistant restarted
+- [ ] No duplicate `AlphaESS` automations (for example `_2` suffix)
+- [ ] No `modbus.write_register` unknown-action repairs
+
 ## Connection
 
 - **Modbus TCP** — IP address + port (default 502)
@@ -292,6 +361,8 @@ This package uses only integration services from
 - Do **not** include `custom_components/alphaess_modbus/integration_alpha_ess.yaml`
    as an HA package in modern setups; it contains legacy automations with
    direct `modbus.write_register` actions.
+- If you still have `/config/packages/integration_alpha_ess.yaml` from older
+   setups, you can safely remove it after migration.
 
 ### Auto-generation in GitHub
 
