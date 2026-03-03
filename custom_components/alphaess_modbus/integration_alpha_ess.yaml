@@ -150,8 +150,6 @@
 #   9.7     2026-01-24      Added AlphaESS_Force_Export and related helpers, added AlphaESS_Update_Force_Export_Cutoff_SoC,
 #                           AlphaESS_Update_Force_Export_Duration, AlphaESS_Update_Force_Export_Power, modified affected
 #                           automations accordingly
-#   9.8     2026-02-12      Adjusted template sensors, adding device_class and state_class
-#   9.9     2026-02-14      Added AlphaESS_System_Fault
 #
 #################################################################################################################################
 
