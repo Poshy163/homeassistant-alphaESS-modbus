@@ -13,6 +13,7 @@ from .const import (
     COMPUTED_SENSOR_DESCRIPTIONS,
     CORE_SENSOR_DESCRIPTIONS,
     DOMAIN,
+    KW_SENSOR_DESCRIPTIONS,
     AlphaESSComputedSensorDescription,
     AlphaESSModbusSensorDescription,
 )
@@ -38,6 +39,10 @@ async def async_setup_entry(
 
     # Computed / template sensors
     for desc in COMPUTED_SENSOR_DESCRIPTIONS:
+        entities.append(AlphaESSComputedSensor(coordinator, entry, desc))
+
+    # kW power sensors for dashboard charts
+    for desc in KW_SENSOR_DESCRIPTIONS:
         entities.append(AlphaESSComputedSensor(coordinator, entry, desc))
 
     async_add_entities(entities)

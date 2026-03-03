@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import UnitOfPower
 
 # ───────────────────────── Domain & integration ──────────────────────────
 
@@ -462,3 +463,82 @@ class _LazyTuple:
 CORE_SENSOR_DESCRIPTIONS = _LazyTuple(_get_core)
 INTERNAL_REGISTER_DESCRIPTIONS = _LazyTuple(_get_internal)
 COMPUTED_SENSOR_DESCRIPTIONS = _LazyTuple(_get_computed)
+
+# ──────────── kW sensors for ApexCharts power diagrams ───────────────────
+# These convert core W-based sensors to kW for use in dashboard charts.
+# They are computed entirely in coordinator._compute_derived().
+
+KW_SENSOR_DESCRIPTIONS: tuple[AlphaESSComputedSensorDescription, ...] = (
+    AlphaESSComputedSensorDescription(
+        key="current_house_load_kw",
+        name="Current House Load (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="current_pv_production_kw",
+        name="Current PV Production (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="power_grid_consumption_kw",
+        name="Grid Consumption (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="power_grid_feed_in_kw",
+        name="Grid Feed-In (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="power_grid_kw",
+        name="Grid Power (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="power_battery_kw",
+        name="Battery Power (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="pv1_power_kw",
+        name="PV1 Power (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="pv2_power_kw",
+        name="PV2 Power (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+    AlphaESSComputedSensorDescription(
+        key="excess_power_kw",
+        name="Excess Power (kW)",
+        unit=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        precision=2,
+    ),
+)

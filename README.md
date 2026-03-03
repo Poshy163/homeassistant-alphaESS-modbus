@@ -9,11 +9,15 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 
 - **UI-based setup** — Config flow and options flow (no YAML required)
 - **120+ entities** across sensor, number, select, switch, button, and time platforms
+- **9 kW sensors** — derived kilowatt versions of key power readings (house load, PV, grid, battery, PV1, PV2, excess) for easier dashboard use
 - **DataUpdateCoordinator** with 5-second polling; grid-safety registers on a slower 60-second cycle
 - **Dispatch control** — force charge / discharge / export with power, duration, and cutoff SoC
 - **Charging & discharging period time pickers** — native `TimeEntity` for period start/stop times
 - **Grid safety registers** — over/under-voltage & frequency protections with trip times
 - **Inverter diagnostics** — firmware versions (ASCII string registers), warnings, faults, network info
+- **Custom Lovelace cards** — auto-loaded, no manual resource registration required:
+  - **Power Flow card** — animated SVG visualisation of solar, grid, battery and home power flows
+  - **9 Entity cards** — grouped entity lists (Overview, Charging, Solar, Battery, Grid, Dispatch, Grid Safety, Warnings & Faults, System) matching the native HA look
 - **Services** — `write_register`, `read_register`, `batch_read`
 
 ## Supported inverters
@@ -54,13 +58,29 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 
 | Platform | Count | Examples |
 |---|---|---|
-| Sensor | 90+ | PV power, grid power, battery SoC/SoH, energy totals, dispatch status, grid safety, firmware versions, warnings & faults |
+| Sensor | 90+ | PV power, grid power, battery SoC/SoH, energy totals, dispatch status, grid safety, firmware versions, warnings & faults, kW variants |
 | Number | 15 | Charging/discharging cutoff SoC, force charge/discharge/export power & duration & cutoff, dispatch power & duration & cutoff, max feed to grid |
 | Select | 3 | Charging/discharging settings, dispatch mode, inverter AC limit |
 | Switch | 6 | Force charging, force discharging, force export, dispatch, excess export, excess export pause |
 | Button | 3 | Dispatch reset, dispatch reset full, synchronise date & time |
 | Time | 8 | Charging/discharging period 1 & 2 start/stop times |
 
+### kW sensors
+
+Nine derived sensor entities convert raw watt readings to kilowatts for
+cleaner dashboard displays and automations:
+
+| Entity | Source |
+|---|---|
+| `sensor.alphaess_current_house_load_kw` | House load |
+| `sensor.alphaess_current_pv_production_kw` | PV production |
+| `sensor.alphaess_power_grid_consumption_kw` | Grid consumption |
+| `sensor.alphaess_power_grid_feed_in_kw` | Grid feed-in |
+| `sensor.alphaess_power_grid_kw` | Grid power (signed) |
+| `sensor.alphaess_power_battery_kw` | Battery power (signed) |
+| `sensor.alphaess_pv1_power_kw` | PV string 1 |
+| `sensor.alphaess_pv2_power_kw` | PV string 2 |
+| `sensor.alphaess_excess_power_kw` | Excess / surplus power |
 
 ## Architecture — YAML-driven register map
 
@@ -68,7 +88,7 @@ This integration's sensor definitions are **not hardcoded in Python**. Instead
 they are loaded at startup from
 [`integration_alpha_ess.yaml`](custom_components/alphaess_modbus/integration_alpha_ess.yaml)
 — the native Home Assistant packages file maintained by
-[Axel Koegler](https://github.com/AxelKoegler).
+[Axel Koegler](https://github.com/SaaX-IRL).
 
 ### Why?
 
@@ -100,18 +120,20 @@ integration_alpha_ess.yaml          (source of truth — never modified)
         │
         ├─ CORE_SENSOR_DESCRIPTIONS           → sensor.py (entity creation)
         ├─ INTERNAL_REGISTER_DESCRIPTIONS     → coordinator.py (polling)
-        └─ COMPUTED_SENSOR_DESCRIPTIONS       → sensor.py (entity creation)
+        ├─ COMPUTED_SENSOR_DESCRIPTIONS       → sensor.py (entity creation)
+        └─ KW_SENSOR_DESCRIPTIONS             → sensor.py (9 kW entities)
         │
         ▼
   coordinator.py                    (DataUpdateCoordinator)
         │
         ├─ _async_update_data()     polls every register via Modbus TCP
-        └─ _compute_derived()       calculates 17 virtual sensors:
+        └─ _compute_derived()       calculates 17 virtual sensors + 9 kW:
                                       PV production, house load, excess power,
                                       clipping, charge/discharge periods,
                                       IP/subnet/gateway normalised,
                                       BMS/EMS version strings,
-                                      system date/time, battery full
+                                      system date/time, battery full,
+                                      kW variants of key power readings
 ```
 
 ### Key design decisions
@@ -142,19 +164,107 @@ integration_alpha_ess.yaml          (source of truth — never modified)
 |---|---|
 | `integration_alpha_ess.yaml` | Axel's HA packages YAML — the register map source of truth (141 Modbus sensors, 29 template sensors, automations, input helpers, utility meters) |
 | `yaml_loader.py` | Parses the YAML into dataclass descriptions at startup |
-| `const.py` | Constants, dataclasses (`AlphaESSModbusSensorDescription`, `RegisterType`), lazy-loading wrappers |
-| `coordinator.py` | `DataUpdateCoordinator` — polls registers, computes derived values |
-| `sensor.py` | Creates `AlphaESSModbusSensor` and `AlphaESSComputedSensor` entities |
+| `const.py` | Constants, dataclasses (`AlphaESSModbusSensorDescription`, `RegisterType`), lazy-loading wrappers, kW sensor descriptions |
+| `coordinator.py` | `DataUpdateCoordinator` — polls registers, computes derived values and kW conversions |
+| `sensor.py` | Creates `AlphaESSModbusSensor` and `AlphaESSComputedSensor` entities (including kW sensors) |
 | `hub.py` | `AsyncModbusTcpClient` wrapper for TCP communication |
+| `www/alphaess-card.js` | Custom Lovelace power flow card (auto-loaded) |
+| `www/alphaess-entities-cards.js` | 9 custom Lovelace entity cards (auto-loaded) |
 | `packages_extras.yaml` | Optional daily utility meters and W → kW template sensors (copy to your HA config) |
 
 ## Dashboard
 
-An example Lovelace view is provided in `alphaess_view.yaml`. Import it via **Settings → Dashboards → ⋮ → Edit → Raw configuration editor**.
+### Custom cards
+
+The integration ships **10 custom Lovelace cards** that appear automatically in
+the **Add card** picker after installation — no extra HACS frontend downloads,
+resource registration, or YAML editing required.
+
+The JS files are bundled inside the integration and served via Home Assistant's
+static path system. The `frontend` and `http` components are declared as
+dependencies in `manifest.json` to guarantee the serving infrastructure is
+ready before card registration.
+
+#### Power Flow card
+
+**Card type:** `custom:alphaess-power-flow-card`
+
+A real-time animated SVG card showing power flow between Solar, Grid, Home
+and Battery.
+
+**To add it:**
+
+1. Open any dashboard and click **Edit → Add card**.
+2. Search for **AlphaESS Power Flow**.
+3. The card is pre-configured with default entity IDs. Adjust if needed via the
+   visual editor.
+
+**What it shows:**
+
+- Real-time animated power flow between **Solar**, **Grid**, **Home** and
+  **Battery**
+- Direction-aware flowing dots (import vs export, charge vs discharge)
+- Battery state-of-charge bar with colour coding
+- All values update live with the integration's 5-second polling
+
+**Configuration options** (all optional — defaults match the integration's
+entity IDs):
+
+| Option | Default | Description |
+|---|---|---|
+| `title` | AlphaESS Power Flow | Card header text |
+| `solar_entity` | `sensor.alphaess_current_pv_production` | Solar production (W) |
+| `grid_entity` | `sensor.alphaess_power_grid` | Grid power (W, positive = import) |
+| `battery_entity` | `sensor.alphaess_power_battery` | Battery power (W, positive = discharge) |
+| `battery_soc_entity` | `sensor.alphaess_soc_battery` | Battery state of charge (%) |
+| `house_entity` | `sensor.alphaess_current_house_load` | House load (W) |
+| `unit` | auto | Display unit — `auto`, `W`, or `kW` |
+
+#### Entity cards (×9)
+
+Nine cards that group every entity in the integration by category, matching the
+native HA entities card look (icon + name + value rows, clickable for
+more-info).
+
+| Card type | Name | Description |
+|---|---|---|
+| `custom:alphaess-overview-card` | AlphaESS Overview | Key metrics at a glance |
+| `custom:alphaess-charging-card` | AlphaESS Charging | Charging & discharging config and controls |
+| `custom:alphaess-solar-card` | AlphaESS Solar | PV production, string power, energy totals |
+| `custom:alphaess-battery-card` | AlphaESS Battery | SoC, SoH, power, BMS info, temperatures |
+| `custom:alphaess-grid-card` | AlphaESS Grid | Grid power, voltage, frequency, energy totals |
+| `custom:alphaess-dispatch-card` | AlphaESS Dispatch | Dispatch mode, power, duration, status |
+| `custom:alphaess-grid-safety-card` | AlphaESS Grid Safety | Over/under-voltage & frequency protections |
+| `custom:alphaess-warnings-card` | AlphaESS Warnings & Faults | Active warning and fault codes |
+| `custom:alphaess-system-card` | AlphaESS System | Firmware, network, date/time, diagnostics |
+
+**To add any of them:**
+
+1. Open any dashboard and click **Edit → Add card**.
+2. Search for the card name (e.g. **AlphaESS Battery**).
+3. Each card comes pre-configured with the correct entities. Optionally change
+   the title via the visual editor.
+
+### Dashboard view YAML
+
+An example dashboard layout is provided in
+[`alphaess_view.yaml`](alphaess_view.yaml). It contains a multi-view dashboard
+with views for Home, Charging, Solar, Battery, Grid, Dispatch, Grid Safety,
+Warnings & Faults, and System.
+
+**To use it:**
+
+1. Go to **Settings → Dashboards → Add Dashboard**.
+2. Choose **New dashboard from scratch**.
+3. Click the pencil icon (edit), then **⋮ → Raw configuration editor**.
+4. Paste the contents of `alphaess_view.yaml` and save.
+
+> **Note:** The Home view contains example personal entities (weather, motion
+> sensors, etc.) that you'll want to customise for your own setup.
 
 ## Credits
 
-- **[Axel Koegler](https://github.com/AxelKoegler)** — original AlphaESS Modbus register research and the `integration_alpha_ess.yaml` packages file that this integration reads from.
+- **[Axel Koegler](https://github.com/SaaX-IRL)** — original AlphaESS Modbus register research and the `integration_alpha_ess.yaml` packages file that this integration reads from.
 
 ## Notes
 

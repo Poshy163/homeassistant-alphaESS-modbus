@@ -5,6 +5,10 @@
     "@Poshy163"
   ],
   "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
   "documentation": "https://github.com/Poshy163/homeassistant-alphaESS-modbus",
   "integration_type": "device",
   "iot_class": "local_polling",

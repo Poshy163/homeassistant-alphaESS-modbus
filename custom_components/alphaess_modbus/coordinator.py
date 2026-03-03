@@ -246,3 +246,14 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
         # Battery full indicator
         status = data.get("battery_status")
         data["battery_full"] = "Yes" if (status is not None and int(status) == 1) else "No"
+
+        # ── kW sensors for power diagrams (W ÷ 1000) ────────────────
+        data["current_house_load_kw"] = round(house_load / 1000, 2)
+        data["current_pv_production_kw"] = round(pv_prod / 1000, 2)
+        data["power_grid_kw"] = round(_g("power_grid") / 1000, 2)
+        data["power_grid_consumption_kw"] = round(max(0.0, _g("power_grid")) / 1000, 2)
+        data["power_grid_feed_in_kw"] = round(max(0.0, -_g("power_grid")) / 1000, 2)
+        data["power_battery_kw"] = round(_g("power_battery") / 1000, 2)
+        data["pv1_power_kw"] = round(_g("pv1_power") / 1000, 2)
+        data["pv2_power_kw"] = round(_g("pv2_power") / 1000, 2)
+        data["excess_power_kw"] = round(max(0.0, pv_prod - house_load) / 1000, 2)
