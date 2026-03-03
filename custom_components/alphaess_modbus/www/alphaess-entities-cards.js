@@ -744,14 +744,15 @@ class AlphaESSEntitiesCard extends HTMLElement {
     getCardSize() {
         const count =
             this._config.entities?.filter((e) => e.entity).length || 0;
-        return 1 + count;
+        return Math.min(8, Math.max(3, Math.ceil(count / 5) + 2));
     }
 
     getGridOptions() {
-        const count =
-            this._config.entities?.filter((e) => e.entity).length || 0;
-        const rows = Math.max(3, 1 + count);
-        return { columns: 12, min_columns: 6, rows: rows, min_rows: 3 };
+        return {
+            columns: 6,
+            min_columns: 3,
+            max_columns: 12,
+        };
     }
 
     /* --- render ---------------------------------------------------------- */
@@ -774,13 +775,11 @@ class AlphaESSEntitiesCard extends HTMLElement {
       <style>
         :host {
           display: block;
-          height: 100%;
         }
         ha-card {
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          height: 100%;
           box-sizing: border-box;
         }
         .card-header {
@@ -793,8 +792,8 @@ class AlphaESSEntitiesCard extends HTMLElement {
         }
         .entities-container {
           padding-bottom: 8px;
-          flex: 1;
           overflow-y: auto;
+                    max-height: 520px;
         }
 
         /* entity rows */
