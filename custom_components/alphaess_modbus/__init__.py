@@ -35,7 +35,7 @@ PLATFORMS: list[Platform] = [
 URL_BASE = "/alphaess_modbus"
 CARD_JS = "alphaess-card.js"
 CARD_ENTITIES_JS = "alphaess-entities-cards.js"
-CARD_VERSION = "1.0.1"
+CARD_VERSION = "1.0.4"
 DATA_CARD_REGISTERED = f"{DOMAIN}_card_registered"
 
 
@@ -49,59 +49,21 @@ class AlphaESSRuntimeData:
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data.setdefault(DOMAIN, {})
-    await async_register_services(hass)
 
-    # Serve the custom card JS and auto-register it as a Lovelace resource.
-    # cache_headers=True lets the browser cache the file; the ?v= query string
-    # busts the cache on version bumps.
-    if not hass.data.get(DATA_CARD_REGISTERED):
-        www_dir = Path(__file__).parent / "www"
-        card_path = www_dir / CARD_JS
-        entities_path = www_dir / CARD_ENTITIES_JS
+    # Register services — wrapped so a failure here won't block card loading.
+    try:
+        await async_register_services(hass)
+    except Exception:
+        _LOGGER.exception("Failed to register AlphaESS services")
 
-        if not card_path.is_file():
-            _LOGGER.error(
-                "Card JS not found at %s – custom cards will not load",
-                card_path,
-            )
-        elif not entities_path.is_file():
-            _LOGGER.error(
-                "Entities card JS not found at %s – custom cards will not load",
-                entities_path,
-            )
-        else:
-            try:
-                await hass.http.async_register_static_paths(
-                    [
-                        StaticPathConfig(
-                            f"{URL_BASE}/{CARD_JS}",
-                            str(card_path),
-                            cache_headers=True,
-                        ),
-                        StaticPathConfig(
-                            f"{URL_BASE}/{CARD_ENTITIES_JS}",
-                            str(entities_path),
-                            cache_headers=True,
-                        ),
-                    ]
-                )
-                add_extra_js_url(
-                    hass, f"{URL_BASE}/{CARD_JS}?v={CARD_VERSION}"
-                )
-                add_extra_js_url(
-                    hass, f"{URL_BASE}/{CARD_ENTITIES_JS}?v={CARD_VERSION}"
-                )
-                hass.data[DATA_CARD_REGISTERED] = True
-                _LOGGER.debug(
-                    "Registered AlphaESS custom cards from %s", www_dir
-                )
-            except Exception:
-                _LOGGER.exception("Failed to register AlphaESS custom cards")
+    await _async_register_custom_cards(hass)
 
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    await _async_register_custom_cards(hass)
+
     hub = AlphaESSModbusHub(hass, entry)
     coordinator = AlphaESSModbusCoordinator(hass, hub)
 
@@ -130,3 +92,57 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def _async_register_custom_cards(hass: HomeAssistant) -> None:
+    # Serve the custom card JS and auto-register it as a Lovelace resource.
+    # cache_headers=True lets the browser cache the file; the ?v= query string
+    # busts the cache on version bumps.
+    if hass.data.get(DATA_CARD_REGISTERED):
+        return
+
+    www_dir = Path(__file__).parent / "www"
+    card_path = www_dir / CARD_JS
+    entities_path = www_dir / CARD_ENTITIES_JS
+
+    if not card_path.is_file():
+        _LOGGER.error(
+            "Card JS not found at %s – custom cards will not load",
+            card_path,
+        )
+        return
+
+    if not entities_path.is_file():
+        _LOGGER.error(
+            "Entities card JS not found at %s – custom cards will not load",
+            entities_path,
+        )
+        return
+
+    try:
+        await hass.http.async_register_static_paths(
+            [
+                StaticPathConfig(
+                    f"{URL_BASE}/{CARD_JS}",
+                    str(card_path),
+                    cache_headers=True,
+                ),
+                StaticPathConfig(
+                    f"{URL_BASE}/{CARD_ENTITIES_JS}",
+                    str(entities_path),
+                    cache_headers=True,
+                ),
+            ]
+        )
+        add_extra_js_url(
+            hass, f"{URL_BASE}/{CARD_JS}?v={CARD_VERSION}"
+        )
+        add_extra_js_url(
+            hass, f"{URL_BASE}/{CARD_ENTITIES_JS}?v={CARD_VERSION}"
+        )
+        hass.data[DATA_CARD_REGISTERED] = True
+        _LOGGER.debug(
+            "Registered AlphaESS custom cards from %s", www_dir
+        )
+    except Exception:
+        _LOGGER.exception("Failed to register AlphaESS custom cards")

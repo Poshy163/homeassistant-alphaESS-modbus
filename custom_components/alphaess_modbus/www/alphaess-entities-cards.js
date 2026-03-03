@@ -699,33 +699,59 @@ class AlphaESSEntitiesCard extends HTMLElement {
         this._hass = null;
         this._config = {};
         this._presetKey = null; // set by subclass
+        this._rendered = false;
     }
 
     /* --- lifecycle ------------------------------------------------------- */
 
+    /* Called by HA with the YAML/UI config — may run before connectedCallback */
     setConfig(config) {
         if (!this._presetKey) throw new Error("AlphaESS card: unknown preset");
         const preset = CARD_PRESETS[this._presetKey];
+        if (!preset)
+            throw new Error(
+                `AlphaESS card: unknown preset key '${this._presetKey}'`,
+            );
         this._config = {
             title: config.title ?? preset.title,
             entities: config.entities ?? preset.entities,
         };
-        this._render();
+        this._rendered = false;
+        if (this.isConnected) {
+            this._render();
+            this._rendered = true;
+        }
+    }
+
+    /* Called when the element is inserted into the DOM */
+    connectedCallback() {
+        if (!this._rendered && this._config && this._config.entities) {
+            this._render();
+            this._rendered = true;
+        }
+        if (this._hass) this._update();
     }
 
     set hass(hass) {
         this._hass = hass;
+        if (!this._rendered && this._config && this._config.entities) {
+            this._render();
+            this._rendered = true;
+        }
         this._update();
     }
 
     getCardSize() {
         const count =
             this._config.entities?.filter((e) => e.entity).length || 0;
-        return 1 + Math.ceil(count / 2);
+        return 1 + count;
     }
 
     getGridOptions() {
-        return { columns: 12, min_columns: 6, min_rows: 3 };
+        const count =
+            this._config.entities?.filter((e) => e.entity).length || 0;
+        const rows = Math.max(3, 1 + count);
+        return { columns: 12, min_columns: 6, rows: rows, min_rows: 3 };
     }
 
     /* --- render ---------------------------------------------------------- */
@@ -746,16 +772,30 @@ class AlphaESSEntitiesCard extends HTMLElement {
 
         this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; }
-        ha-card { overflow: hidden; }
+        :host {
+          display: block;
+          height: 100%;
+        }
+        ha-card {
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          box-sizing: border-box;
+        }
         .card-header {
           padding: 12px 16px 4px;
           font-size: 16px;
           font-weight: 500;
           color: var(--ha-card-header-color, var(--primary-text-color));
           line-height: 1.4;
+          flex-shrink: 0;
         }
-        .entities-container { padding-bottom: 8px; }
+        .entities-container {
+          padding-bottom: 8px;
+          flex: 1;
+          overflow-y: auto;
+        }
 
         /* entity rows */
         .entity-row {
@@ -880,40 +920,65 @@ class AlphaESSEntitiesCard extends HTMLElement {
 
 function registerAlphaESSCard(presetKey) {
     const preset = CARD_PRESETS[presetKey];
+    if (!preset) {
+        console.error(
+            `[alphaess-entities-cards] Unknown preset key: ${presetKey}`,
+        );
+        return;
+    }
     const tag = `alphaess-${presetKey.replace(/_/g, "-")}-card`;
 
-    const CardClass = class extends AlphaESSEntitiesCard {
-        constructor() {
-            super();
-            this._presetKey = presetKey;
+    try {
+        if (customElements.get(tag)) {
+            console.warn(
+                `[alphaess-entities-cards] ${tag} already defined, skipping`,
+            );
+            return;
         }
 
-        static getStubConfig() {
-            return { title: preset.title };
+        const CardClass = class extends AlphaESSEntitiesCard {
+            constructor() {
+                super();
+                this._presetKey = presetKey;
+            }
+
+            static getStubConfig() {
+                return { title: preset.title };
+            }
+
+            static getConfigForm() {
+                return {
+                    schema: [{ name: "title", selector: { text: {} } }],
+                    computeLabel: (schema) => {
+                        const labels = { title: "Title" };
+                        return labels[schema.name] ?? schema.name;
+                    },
+                };
+            }
+        };
+
+        customElements.define(tag, CardClass);
+        console.debug(
+            `[alphaess-entities-cards] Defined custom element: ${tag}`,
+        );
+
+        window.customCards = window.customCards || [];
+        if (!window.customCards.some((c) => c.type === tag)) {
+            window.customCards.push({
+                type: tag,
+                name: preset.cardName,
+                preview: true,
+                description: preset.description,
+                documentationURL:
+                    "https://github.com/Poshy163/homeassistant-alphaESS-modbus",
+            });
         }
-
-        static getConfigForm() {
-            return {
-                schema: [{ name: "title", selector: { text: {} } }],
-                computeLabel: (schema) => {
-                    const labels = { title: "Title" };
-                    return labels[schema.name] ?? schema.name;
-                },
-            };
-        }
-    };
-
-    customElements.define(tag, CardClass);
-
-    window.customCards = window.customCards || [];
-    window.customCards.push({
-        type: tag,
-        name: preset.cardName,
-        preview: true,
-        description: preset.description,
-        documentationURL:
-            "https://github.com/Poshy163/homeassistant-alphaESS-modbus",
-    });
+    } catch (err) {
+        console.error(
+            `[alphaess-entities-cards] Failed to register ${tag}:`,
+            err,
+        );
+    }
 }
 
 Object.keys(CARD_PRESETS).forEach(registerAlphaESSCard);

@@ -63,9 +63,13 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         this.attachShadow({ mode: "open" });
         this._hass = null;
         this._config = {};
+        this._rendered = false;
     }
 
+    /* Called by HA with the YAML/UI config — may run before connectedCallback */
     setConfig(config) {
+        if (!config)
+            throw new Error("AlphaESS Power Flow: invalid configuration");
         this._config = {
             title: config.title ?? "AlphaESS Power Flow",
             solar_entity: config.solar_entity ?? DEFAULTS.solar,
@@ -76,11 +80,28 @@ class AlphaESSPowerFlowCard extends HTMLElement {
             house_entity: config.house_entity ?? DEFAULTS.house,
             unit: config.unit ?? "auto", // "W", "kW", or "auto"
         };
-        this._render();
+        this._rendered = false;
+        if (this.isConnected) {
+            this._render();
+            this._rendered = true;
+        }
+    }
+
+    /* Called when the element is inserted into the DOM */
+    connectedCallback() {
+        if (!this._rendered && this._config) {
+            this._render();
+            this._rendered = true;
+        }
+        if (this._hass) this._updateValues();
     }
 
     set hass(hass) {
         this._hass = hass;
+        if (!this._rendered && this._config) {
+            this._render();
+            this._rendered = true;
+        }
         this._updateValues();
     }
 
@@ -569,18 +590,45 @@ class AlphaESSPowerFlowCard extends HTMLElement {
 
 /* ─── register ─────────────────────────────────────────────────────────── */
 
-customElements.define("alphaess-power-flow-card", AlphaESSPowerFlowCard);
+try {
+    if (!customElements.get("alphaess-power-flow-card")) {
+        customElements.define(
+            "alphaess-power-flow-card",
+            AlphaESSPowerFlowCard,
+        );
+        console.debug(
+            "[alphaess-card] Defined custom element: alphaess-power-flow-card",
+        );
+    } else {
+        console.warn(
+            "[alphaess-card] alphaess-power-flow-card already defined, skipping",
+        );
+    }
+} catch (err) {
+    console.error(
+        "[alphaess-card] Failed to define alphaess-power-flow-card:",
+        err,
+    );
+}
 
-window.customCards = window.customCards || [];
-window.customCards.push({
-    type: "alphaess-power-flow-card",
-    name: "AlphaESS Power Flow",
-    preview: true,
-    description:
-        "Real-time power flow visualisation for AlphaESS inverters showing solar, grid, battery and home.",
-    documentationURL:
-        "https://github.com/Poshy163/homeassistant-alphaESS-modbus",
-});
+try {
+    window.customCards = window.customCards || [];
+    if (
+        !window.customCards.some((c) => c.type === "alphaess-power-flow-card")
+    ) {
+        window.customCards.push({
+            type: "alphaess-power-flow-card",
+            name: "AlphaESS Power Flow",
+            preview: true,
+            description:
+                "Real-time power flow visualisation for AlphaESS inverters showing solar, grid, battery and home.",
+            documentationURL:
+                "https://github.com/Poshy163/homeassistant-alphaESS-modbus",
+        });
+    }
+} catch (err) {
+    console.error("[alphaess-card] Failed to register card in picker:", err);
+}
 
 console.info(
     `%c  ALPHAESS-POWER-FLOW-CARD  %c  v${CARD_VERSION}  `,
