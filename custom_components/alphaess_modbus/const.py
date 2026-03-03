@@ -1,4 +1,4 @@
-﻿"""Constants for the AlphaESS Modbus integration."""
+"""Constants for the AlphaESS Modbus integration."""
 from __future__ import annotations
 
 from dataclasses import dataclass
