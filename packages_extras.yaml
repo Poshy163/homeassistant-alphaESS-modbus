@@ -1,0 +1,155 @@
+# =============================================================================
+# AlphaESS Modbus - Extra Entities (Optional HA Packages File)
+# =============================================================================
+#
+# This file provides additional entities that complement the alphaess_modbus
+# custom integration. These are NOT part of the integration itself — they are
+# standard Home Assistant utility meters and template sensors defined via the
+# HA packages mechanism.
+#
+# HOW TO USE:
+#   1. Copy this file to your Home Assistant config directory, e.g.:
+#        /config/packages/alphaess_extras.yaml
+#   2. Ensure packages are enabled in your configuration.yaml:
+#        homeassistant:
+#          packages:
+#            alphaess_extras: !include packages/alphaess_extras.yaml
+#   3. Restart Home Assistant.
+#
+# WHAT THIS FILE PROVIDES:
+#   - Daily utility meters for all energy (kWh) sensors
+#   - Template sensors converting key power readings from W to kW
+#
+# REQUIREMENTS:
+#   - The alphaess_modbus integration must be installed and configured.
+#   - Entity IDs below assume the default naming pattern: sensor.alphaess_*
+#
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# UTILITY METERS — Daily Energy Tracking
+# -----------------------------------------------------------------------------
+# These create daily-resetting counters for each energy sensor provided by
+# the integration (state_class: total_increasing, unit: kWh).
+# Useful for energy dashboards, automations, and daily consumption tracking.
+# -----------------------------------------------------------------------------
+
+utility_meter:
+  # Daily energy fed to grid (meter reading)
+  alphaess_daily_feed_to_grid_meter:
+    source: sensor.alphaess_total_energy_feed_to_grid_meter
+    name: "AlphaESS Daily Feed to Grid (Meter)"
+    cycle: daily
+
+  # Daily energy consumed from grid (meter reading)
+  alphaess_daily_consumption_from_grid_meter:
+    source: sensor.alphaess_total_energy_consumption_from_grid_meter
+    name: "AlphaESS Daily Consumption from Grid (Meter)"
+    cycle: daily
+
+  # Daily energy fed to grid from PV
+  alphaess_daily_feed_to_grid_pv:
+    source: sensor.alphaess_total_energy_feed_to_grid_pv
+    name: "AlphaESS Daily Feed to Grid (PV)"
+    cycle: daily
+
+  # Daily total energy from PV
+  alphaess_daily_from_pv:
+    source: sensor.alphaess_total_energy_from_pv
+    name: "AlphaESS Daily Energy from PV"
+    cycle: daily
+
+  # Daily energy charged into battery
+  alphaess_daily_charge_battery:
+    source: sensor.alphaess_total_energy_charge_battery
+    name: "AlphaESS Daily Battery Charge"
+    cycle: daily
+
+  # Daily energy discharged from battery
+  alphaess_daily_discharge_battery:
+    source: sensor.alphaess_total_energy_discharge_battery
+    name: "AlphaESS Daily Battery Discharge"
+    cycle: daily
+
+  # Daily energy charged into battery from grid
+  alphaess_daily_charge_battery_from_grid:
+    source: sensor.alphaess_total_energy_charge_battery_from_grid
+    name: "AlphaESS Daily Battery Charge from Grid"
+    cycle: daily
+
+
+# -----------------------------------------------------------------------------
+# TEMPLATE SENSORS — Power in kW
+# -----------------------------------------------------------------------------
+# The integration provides power readings in Watts (W). These template sensors
+# convert them to kilowatts (kW) for cleaner dashboard display.
+# Values are divided by 1000 and rounded to 2 decimal places.
+# -----------------------------------------------------------------------------
+
+template:
+  - sensor:
+      # Current PV production in kW
+      - name: "AlphaESS PV Production (kW)"
+        unique_id: alphaess_pv_production_kw
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        icon: mdi:solar-power
+        state: >-
+          {% set val = states('sensor.alphaess_current_pv_production') %}
+          {{ (val | float(0) / 1000) | round(2) if val not in ['unknown', 'unavailable'] else None }}
+        availability: >-
+          {{ states('sensor.alphaess_current_pv_production') not in ['unknown', 'unavailable'] }}
+
+      # Current house load in kW
+      - name: "AlphaESS House Load (kW)"
+        unique_id: alphaess_house_load_kw
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        icon: mdi:home-lightning-bolt
+        state: >-
+          {% set val = states('sensor.alphaess_current_house_load') %}
+          {{ (val | float(0) / 1000) | round(2) if val not in ['unknown', 'unavailable'] else None }}
+        availability: >-
+          {{ states('sensor.alphaess_current_house_load') not in ['unknown', 'unavailable'] }}
+
+      # Grid power in kW
+      - name: "AlphaESS Grid Power (kW)"
+        unique_id: alphaess_grid_power_kw
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        icon: mdi:transmission-tower
+        state: >-
+          {% set val = states('sensor.alphaess_power_grid') %}
+          {{ (val | float(0) / 1000) | round(2) if val not in ['unknown', 'unavailable'] else None }}
+        availability: >-
+          {{ states('sensor.alphaess_power_grid') not in ['unknown', 'unavailable'] }}
+
+      # Battery power in kW
+      - name: "AlphaESS Battery Power (kW)"
+        unique_id: alphaess_battery_power_kw
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        icon: mdi:battery-charging
+        state: >-
+          {% set val = states('sensor.alphaess_power_battery') %}
+          {{ (val | float(0) / 1000) | round(2) if val not in ['unknown', 'unavailable'] else None }}
+        availability: >-
+          {{ states('sensor.alphaess_power_battery') not in ['unknown', 'unavailable'] }}
+
+      # Inverter power in kW
+      - name: "AlphaESS Inverter Power (kW)"
+        unique_id: alphaess_inverter_power_kw
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        icon: mdi:flash
+        state: >-
+          {% set val = states('sensor.alphaess_power_inverter') %}
+          {{ (val | float(0) / 1000) | round(2) if val not in ['unknown', 'unavailable'] else None }}
+        availability: >-
+          {{ states('sensor.alphaess_power_inverter') not in ['unknown', 'unavailable'] }}
