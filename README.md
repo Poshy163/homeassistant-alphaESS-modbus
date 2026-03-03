@@ -262,6 +262,44 @@ Warnings & Faults, and System.
 > **Note:** The Home view contains example personal entities (weather, motion
 > sensors, etc.) that you'll want to customise for your own setup.
 
+## Modern automations package (recommended)
+
+To get **visible and working** AlphaESS automations without legacy
+`modbus.write_register` actions, use the generated modern package:
+
+- [`custom_components/alphaess_modbus/automations_modern.yaml`](custom_components/alphaess_modbus/automations_modern.yaml)
+
+This package uses only integration services from
+`alphaess_modbus` (for example `force_charge`, `dispatch`,
+`dispatch_reset`, `sync_datetime`, `set_charging_periods`,
+`set_discharging_periods`).
+
+### Home Assistant setup
+
+1. Include it directly in `configuration.yaml`:
+
+    ```yaml
+    homeassistant:
+       packages:
+      alphaess_automations_modern: !include custom_components/alphaess_modbus/automations_modern.yaml
+    ```
+
+2. Restart Home Assistant.
+3. Open **Settings → Automations & scenes** and search for `AlphaESS`.
+
+### Important
+
+- Do **not** include `custom_components/alphaess_modbus/integration_alpha_ess.yaml`
+   as an HA package in modern setups; it contains legacy automations with
+   direct `modbus.write_register` actions.
+
+### Auto-generation in GitHub
+
+When `.github/workflows/sync-yaml.yml` detects and syncs a new upstream
+`integration_alpha_ess.yaml`, it now also regenerates
+`custom_components/alphaess_modbus/automations_modern.yaml`
+automatically before opening the PR.
+
 ## Credits
 
 - **[Axel Koegler](https://github.com/SaaX-IRL)** — original AlphaESS Modbus register research and the `integration_alpha_ess.yaml` packages file that this integration reads from.

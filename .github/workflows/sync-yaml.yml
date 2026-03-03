@@ -35,6 +35,11 @@ jobs:
               custom_components/alphaess_modbus/integration_alpha_ess.yaml
           fi
 
+      - name: Regenerate modern automation package
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          python scripts/generate_modern_automations_package.py
+
       - name: Create Pull Request
         if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
@@ -44,6 +49,9 @@ jobs:
           body: |
             Automated update — a new version of `integration_alpha_ess.yaml` was
             detected at https://projects.hillviewlodge.ie/_alphaess/integration_alpha_ess.yaml
+
+            This PR also regenerates `automations_modern.yaml` so modern
+            service-based automations stay in sync with upstream updates.
 
             Please review the diff to confirm the new registers / changes are
             compatible before merging.
