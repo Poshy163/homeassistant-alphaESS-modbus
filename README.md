@@ -5,6 +5,12 @@
 
 AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HACS.
 
+## Start here
+
+- **New users:** follow [Install (HACS)](#install-hacs), then [Modern automations package (recommended)](#modern-automations-package-recommended), then [Dashboard](#dashboard).
+- **Existing Axel package users:** go to [Migration from projects.hillviewlodge.ie](#migration-from-projectshillviewlodgeie).
+- **Advanced/technical details:** see [Architecture — YAML-driven register map](#architecture--yaml-driven-register-map).
+
 ## Features
 
 - **UI-based setup** — Config flow and options flow (no YAML required)
@@ -49,6 +55,53 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 5. Restart Home Assistant.
 6. Go to **Settings → Devices & Services → Add Integration** and search for **AlphaESS Modbus**.
 7. Enter your inverter's IP address, port, slave ID, choose your inverter model, and submit.
+
+## Modern automations package (recommended)
+
+To get **visible and working** AlphaESS automations without legacy
+`modbus.write_register` actions, use the generated modern package:
+
+- [`custom_components/alphaess_modbus/automations_modern.yaml`](custom_components/alphaess_modbus/automations_modern.yaml)
+
+This package uses only integration services from
+`alphaess_modbus` (for example `force_charge`, `dispatch`,
+`dispatch_reset`, `sync_datetime`, `set_charging_periods`,
+`set_discharging_periods`).
+
+In plain terms:
+- **New way (recommended):** automations call `alphaess_modbus.*` services provided by this integration.
+- **Old way (legacy package):** automations call raw `modbus.write_register` actions directly.
+
+Because this package uses the new way only, it does not depend on the old
+package action wiring and avoids those legacy unknown-action repair warnings.
+
+### Home Assistant setup
+
+1. Include it directly in `configuration.yaml`:
+
+    ```yaml
+    homeassistant:
+       packages:
+      alphaess_automations_modern: !include custom_components/alphaess_modbus/automations_modern.yaml
+    ```
+
+2. Restart Home Assistant.
+3. Open **Settings → Automations & scenes** and search for `AlphaESS`.
+
+### Important
+
+- Do **not** include `custom_components/alphaess_modbus/integration_alpha_ess.yaml`
+   as an HA package in modern setups; it contains legacy automations with
+   direct `modbus.write_register` actions.
+- If you still have `/config/packages/integration_alpha_ess.yaml` from older
+   setups, you can safely remove it after migration.
+
+### Auto-generation in GitHub
+
+When `.github/workflows/sync-yaml.yml` detects and syncs a new upstream
+`integration_alpha_ess.yaml`, it now also regenerates
+`custom_components/alphaess_modbus/automations_modern.yaml`
+automatically before opening the PR.
 
 ## Migration from projects.hillviewlodge.ie
 
@@ -122,6 +175,8 @@ After restart:
 - [ ] Home Assistant restarted
 - [ ] No duplicate `AlphaESS` automations (for example `_2` suffix)
 - [ ] No `modbus.write_register` unknown-action repairs
+
+## Reference (details)
 
 ## Connection
 
@@ -334,53 +389,6 @@ Warnings & Faults, and System.
 
 > **Note:** The Home view contains example personal entities (weather, motion
 > sensors, etc.) that you'll want to customise for your own setup.
-
-## Modern automations package (recommended)
-
-To get **visible and working** AlphaESS automations without legacy
-`modbus.write_register` actions, use the generated modern package:
-
-- [`custom_components/alphaess_modbus/automations_modern.yaml`](custom_components/alphaess_modbus/automations_modern.yaml)
-
-This package uses only integration services from
-`alphaess_modbus` (for example `force_charge`, `dispatch`,
-`dispatch_reset`, `sync_datetime`, `set_charging_periods`,
-`set_discharging_periods`).
-
-In plain terms:
-- **New way (recommended):** automations call `alphaess_modbus.*` services provided by this integration.
-- **Old way (legacy package):** automations call raw `modbus.write_register` actions directly.
-
-Because this package uses the new way only, it does not depend on the old
-package action wiring and avoids those legacy unknown-action repair warnings.
-
-### Home Assistant setup
-
-1. Include it directly in `configuration.yaml`:
-
-    ```yaml
-    homeassistant:
-       packages:
-      alphaess_automations_modern: !include custom_components/alphaess_modbus/automations_modern.yaml
-    ```
-
-2. Restart Home Assistant.
-3. Open **Settings → Automations & scenes** and search for `AlphaESS`.
-
-### Important
-
-- Do **not** include `custom_components/alphaess_modbus/integration_alpha_ess.yaml`
-   as an HA package in modern setups; it contains legacy automations with
-   direct `modbus.write_register` actions.
-- If you still have `/config/packages/integration_alpha_ess.yaml` from older
-   setups, you can safely remove it after migration.
-
-### Auto-generation in GitHub
-
-When `.github/workflows/sync-yaml.yml` detects and syncs a new upstream
-`integration_alpha_ess.yaml`, it now also regenerates
-`custom_components/alphaess_modbus/automations_modern.yaml`
-automatically before opening the PR.
 
 ## Credits
 
