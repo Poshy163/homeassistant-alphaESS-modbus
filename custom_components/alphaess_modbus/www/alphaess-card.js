@@ -10,7 +10,7 @@
 
 console.debug("[alphaess-card] Loading alphaess-power-flow-card module…");
 
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.8";
 
 /* ─── default entity IDs (auto-match the alphaess_modbus integration) ── */
 const DEFAULTS = {
@@ -337,54 +337,36 @@ class AlphaESSPowerFlowCard extends HTMLElement {
 
             <!-- ── ANIMATED DOTS ────────────────────────── -->
             <!-- Solar → Home -->
-            <circle class="flow-dot" id="dot-solar-1" fill="${COLORS.solar}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
-                <mpath href="#path-solar-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-solar-1" cx="250" cy="75" fill="${COLORS.solar}">
+              <animate attributeName="cy" values="75;195" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-solar-2" fill="${COLORS.solar}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" begin="0.5s" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
-                <mpath href="#path-solar-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-solar-2" cx="250" cy="75" fill="${COLORS.solar}">
+              <animate attributeName="cy" values="75;195" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-solar-3" fill="${COLORS.solar}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" begin="1s" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
-                <mpath href="#path-solar-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-solar-3" cx="250" cy="75" fill="${COLORS.solar}">
+              <animate attributeName="cy" values="75;195" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
             </circle>
 
             <!-- Grid ↔ Home -->
-            <circle class="flow-dot" id="dot-grid-1" fill="${COLORS.grid_consume}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" id="anim-grid-1">
-                <mpath href="#path-grid-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-grid-1" cx="105" cy="165" fill="${COLORS.grid_consume}">
+              <animate attributeName="cx" values="105;205" dur="1.5s" repeatCount="indefinite" id="anim-grid-1" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-grid-2" fill="${COLORS.grid_consume}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-grid-2">
-                <mpath href="#path-grid-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-grid-2" cx="105" cy="165" fill="${COLORS.grid_consume}">
+              <animate attributeName="cx" values="105;205" dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-grid-2" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-grid-3" fill="${COLORS.grid_consume}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-grid-3">
-                <mpath href="#path-grid-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-grid-3" cx="105" cy="165" fill="${COLORS.grid_consume}">
+              <animate attributeName="cx" values="105;205" dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-grid-3" calcMode="linear" />
             </circle>
 
             <!-- Battery ↔ Home -->
-            <circle class="flow-dot" id="dot-batt-1" fill="${COLORS.battery_charge}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" id="anim-batt-1">
-                <mpath href="#path-batt-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-batt-1" cx="395" cy="165" fill="${COLORS.battery_charge}">
+              <animate attributeName="cx" values="395;295" dur="1.5s" repeatCount="indefinite" id="anim-batt-1" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-batt-2" fill="${COLORS.battery_charge}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-batt-2">
-                <mpath href="#path-batt-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-batt-2" cx="395" cy="165" fill="${COLORS.battery_charge}">
+              <animate attributeName="cx" values="395;295" dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-batt-2" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-batt-3" fill="${COLORS.battery_charge}">
-              <animateMotion dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-batt-3">
-                <mpath href="#path-batt-home"/>
-              </animateMotion>
+            <circle class="flow-dot" id="dot-batt-3" cx="395" cy="165" fill="${COLORS.battery_charge}">
+              <animate attributeName="cx" values="395;295" dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-batt-3" calcMode="linear" />
             </circle>
 
             <!-- ── NODE: SOLAR (top centre) ─────────────── -->
@@ -523,7 +505,7 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         this._setDotDirection(
             root,
             ["anim-grid-1", "anim-grid-2", "anim-grid-3"],
-            gridImporting ? "0;1" : "1;0",
+            gridImporting ? "105;205" : "205;105",
         );
 
         // Battery ↔ Home  (positive = discharge = batt→home; negative = charge = home→batt)
@@ -554,7 +536,7 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         this._setDotDirection(
             root,
             ["anim-batt-1", "anim-batt-2", "anim-batt-3"],
-            battDischarging ? "0;1" : "1;0",
+            battDischarging ? "395;295" : "295;395",
         );
     }
 
@@ -580,10 +562,10 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         if (circle) circle.classList.toggle("active", active);
     }
 
-    _setDotDirection(root, animIds, keyPoints) {
+    _setDotDirection(root, animIds, values) {
         animIds.forEach((id) => {
             const anim = root.getElementById(id);
-            if (anim) anim.setAttribute("keyPoints", keyPoints);
+            if (anim) anim.setAttribute("values", values);
         });
     }
 }
@@ -604,9 +586,17 @@ try {
             "[alphaess-card] alphaess-power-flow-card already defined, skipping",
         );
     }
+
+    if (!customElements.get("alphaess-card")) {
+        class AlphaESSPowerFlowCardAlias extends AlphaESSPowerFlowCard {}
+        customElements.define("alphaess-card", AlphaESSPowerFlowCardAlias);
+        console.debug("[alphaess-card] Defined custom element: alphaess-card");
+    } else {
+        console.warn("[alphaess-card] alphaess-card already defined, skipping");
+    }
 } catch (err) {
     console.error(
-        "[alphaess-card] Failed to define alphaess-power-flow-card:",
+        "[alphaess-card] Failed to define power flow card element(s):",
         err,
     );
 }
@@ -619,7 +609,7 @@ try {
         window.customCards.push({
             type: "alphaess-power-flow-card",
             name: "AlphaESS Power Flow",
-            preview: true,
+            preview: false,
             description:
                 "Real-time power flow visualisation for AlphaESS inverters showing solar, grid, battery and home.",
             documentationURL:

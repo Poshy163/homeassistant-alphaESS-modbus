@@ -966,7 +966,7 @@ function registerAlphaESSCard(presetKey) {
             window.customCards.push({
                 type: tag,
                 name: preset.cardName,
-                preview: true,
+                preview: false,
                 description: preset.description,
                 documentationURL:
                     "https://github.com/Poshy163/homeassistant-alphaESS-modbus",

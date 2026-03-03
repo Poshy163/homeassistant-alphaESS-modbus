@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -33,10 +34,11 @@ PLATFORMS: list[Platform] = [
 ]
 
 URL_BASE = "/alphaess_modbus"
+LEGACY_URL_BASE = "/custom_components/alphaess_modbus/www"
 CARD_JS = "alphaess-card.js"
 CARD_ENTITIES_JS = "alphaess-entities-cards.js"
-CARD_VERSION = "1.0.4"
 DATA_CARD_REGISTERED = f"{DOMAIN}_card_registered"
+DATA_CARD_REGISTER_LOCK = f"{DOMAIN}_card_register_lock"
 
 
 @dataclass
@@ -96,53 +98,72 @@ async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def _async_register_custom_cards(hass: HomeAssistant) -> None:
     # Serve the custom card JS and auto-register it as a Lovelace resource.
-    # cache_headers=True lets the browser cache the file; the ?v= query string
-    # busts the cache on version bumps.
-    if hass.data.get(DATA_CARD_REGISTERED):
-        return
+    # We intentionally disable cache headers and use stable URLs so users do
+    # not need to manually manage resource version query strings.
+    lock = hass.data.setdefault(DATA_CARD_REGISTER_LOCK, asyncio.Lock())
+    async with lock:
+        if hass.data.get(DATA_CARD_REGISTERED):
+            return
 
-    www_dir = Path(__file__).parent / "www"
-    card_path = www_dir / CARD_JS
-    entities_path = www_dir / CARD_ENTITIES_JS
+        www_dir = Path(__file__).parent / "www"
+        card_path = www_dir / CARD_JS
+        entities_path = www_dir / CARD_ENTITIES_JS
 
-    if not card_path.is_file():
-        _LOGGER.error(
-            "Card JS not found at %s – custom cards will not load",
-            card_path,
-        )
-        return
+        if not card_path.is_file():
+            _LOGGER.error(
+                "Card JS not found at %s – custom cards will not load",
+                card_path,
+            )
+            return
 
-    if not entities_path.is_file():
-        _LOGGER.error(
-            "Entities card JS not found at %s – custom cards will not load",
-            entities_path,
-        )
-        return
+        if not entities_path.is_file():
+            _LOGGER.error(
+                "Entities card JS not found at %s – custom cards will not load",
+                entities_path,
+            )
+            return
 
-    try:
-        await hass.http.async_register_static_paths(
-            [
-                StaticPathConfig(
-                    f"{URL_BASE}/{CARD_JS}",
-                    str(card_path),
-                    cache_headers=True,
-                ),
-                StaticPathConfig(
-                    f"{URL_BASE}/{CARD_ENTITIES_JS}",
-                    str(entities_path),
-                    cache_headers=True,
-                ),
-            ]
-        )
-        add_extra_js_url(
-            hass, f"{URL_BASE}/{CARD_JS}?v={CARD_VERSION}"
-        )
-        add_extra_js_url(
-            hass, f"{URL_BASE}/{CARD_ENTITIES_JS}?v={CARD_VERSION}"
-        )
+        resources = [
+            (f"{URL_BASE}/{CARD_JS}", str(card_path)),
+            (f"{URL_BASE}/{CARD_ENTITIES_JS}", str(entities_path)),
+            (f"{LEGACY_URL_BASE}/{CARD_JS}", str(card_path)),
+            (f"{LEGACY_URL_BASE}/{CARD_ENTITIES_JS}", str(entities_path)),
+        ]
+
+        for url_path, file_path in resources:
+            try:
+                await hass.http.async_register_static_paths(
+                    [
+                        StaticPathConfig(
+                            url_path,
+                            file_path,
+                            cache_headers=False,
+                        )
+                    ]
+                )
+            except ValueError:
+                _LOGGER.debug(
+                    "Static path %s already registered; continuing",
+                    url_path,
+                )
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to register static path %s",
+                    url_path,
+                )
+                return
+
+        try:
+            add_extra_js_url(hass, f"{URL_BASE}/{CARD_JS}")
+            add_extra_js_url(
+                hass,
+                f"{URL_BASE}/{CARD_ENTITIES_JS}",
+            )
+        except Exception:
+            _LOGGER.exception("Failed to add AlphaESS card JS URLs")
+            return
+
         hass.data[DATA_CARD_REGISTERED] = True
         _LOGGER.debug(
             "Registered AlphaESS custom cards from %s", www_dir
         )
-    except Exception:
-        _LOGGER.exception("Failed to register AlphaESS custom cards")
