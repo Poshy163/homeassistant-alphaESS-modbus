@@ -10,7 +10,7 @@
 
 console.debug("[alphaess-card] Loading alphaess-power-flow-card module…");
 
-const CARD_VERSION = "1.1.1";
+const CARD_VERSION = "1.1.4";
 
 /* ─── default entity IDs (auto-match the alphaess_modbus integration) ── */
 const DEFAULTS = {
@@ -324,7 +324,7 @@ class AlphaESSPowerFlowCard extends HTMLElement {
           <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <!-- Flow line paths (used for dot motion) -->
-              <path id="path-solar-home" d="M 250,77 L 250,129" />
+              <path id="path-solar-home" d="M 250,67 L 250,129" />
                             <path id="path-grid-home"  d="M 107,165 L 214,165" />
                             <path id="path-batt-home"  d="M 393,165 L 286,165" />
             </defs>
@@ -339,16 +339,16 @@ class AlphaESSPowerFlowCard extends HTMLElement {
 
             <!-- ── ANIMATED DOTS ────────────────────────── -->
             <!-- Solar → Home -->
-                                                <circle class="flow-dot" id="dot-solar-1" cx="250" cy="77" fill="${COLORS.solar}">
-                                                        <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
+                                                <circle class="flow-dot" id="dot-solar-1" cx="250" cy="67" fill="${COLORS.solar}">
+                                                    <animate attributeName="cy" values="67;129" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
                                                         <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
             </circle>
-                                                <circle class="flow-dot" id="dot-solar-2" cx="250" cy="77" fill="${COLORS.solar}">
-                                                        <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
+                                                <circle class="flow-dot" id="dot-solar-2" cx="250" cy="67" fill="${COLORS.solar}">
+                                                    <animate attributeName="cy" values="67;129" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
                                                         <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
             </circle>
-                                                <circle class="flow-dot" id="dot-solar-3" cx="250" cy="77" fill="${COLORS.solar}">
-                                                        <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
+                                                <circle class="flow-dot" id="dot-solar-3" cx="250" cy="67" fill="${COLORS.solar}">
+                                                    <animate attributeName="cy" values="67;129" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
                                                         <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
             </circle>
 
@@ -381,34 +381,34 @@ class AlphaESSPowerFlowCard extends HTMLElement {
             </circle>
 
             <!-- ── NODE: SOLAR (top centre) ─────────────── -->
-            <circle class="node-circle" id="circle-solar" cx="250" cy="45"
+                <circle class="node-circle" id="circle-solar" cx="250" cy="35"
                     r="32" stroke="${COLORS.solar}" />
-            <text class="node-icon" x="250" y="45">☀️</text>
-            <text class="node-label" x="250" y="85">Solar</text>
-            <text class="node-value" id="val-solar" x="250" y="100">—</text>
+                <text class="node-icon" x="250" y="35">☀️</text>
+                <text class="node-label" x="320" y="33" text-anchor="start">Solar</text>
+                <text class="node-value" id="val-solar" x="320" y="51" text-anchor="start">—</text>
 
             <!-- ── NODE: HOME (centre) ──────────────────── -->
             <circle class="node-circle active" cx="250" cy="165"
                     r="36" stroke="${COLORS.house}" />
             <text class="node-icon" x="250" y="163">🏠</text>
-            <text class="node-label" x="250" y="210">Home</text>
-            <text class="node-value" id="val-house" x="250" y="225">—</text>
+            <text class="node-label" x="250" y="218">Home</text>
+            <text class="node-value" id="val-house" x="250" y="233">—</text>
 
             <!-- ── NODE: GRID (left) ────────────────────── -->
             <circle class="node-circle" id="circle-grid" cx="75" cy="165"
                     r="32" stroke="${COLORS.grid_consume}" />
             <text class="node-icon" x="75" y="163">⚡</text>
-            <text class="node-label" x="75" y="205">Grid</text>
-            <text class="node-value" id="val-grid" x="75" y="220">—</text>
-            <text class="node-sub"   id="lbl-grid" x="75" y="235"></text>
+            <text class="node-label" x="75" y="213">Grid</text>
+            <text class="node-value" id="val-grid" x="75" y="228">—</text>
+            <text class="node-sub"   id="lbl-grid" x="75" y="243"></text>
 
             <!-- ── NODE: BATTERY (right) ────────────────── -->
             <circle class="node-circle" id="circle-batt" cx="425" cy="165"
                     r="32" stroke="${COLORS.battery_charge}" />
             <text class="node-icon" x="425" y="163">🔋</text>
-            <text class="node-label" x="425" y="205">Battery</text>
-            <text class="node-value" id="val-batt" x="425" y="220">—</text>
-            <text class="node-sub"   id="lbl-batt" x="425" y="235"></text>
+            <text class="node-label" x="425" y="213">Battery</text>
+            <text class="node-value" id="val-batt" x="425" y="228">—</text>
+            <text class="node-sub"   id="lbl-batt" x="425" y="243"></text>
 
             <!-- ── BATTERY SOC BAR ──────────────────────── -->
             <rect class="soc-bg" x="393" y="250" width="64" height="14" />
@@ -430,11 +430,15 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         const h = this._hass;
 
         // Read raw state values
-        const solar = stateValue(h, c.solar_entity); // W  (positive = producing)
+        const solarRaw = stateValue(h, c.solar_entity); // W  (positive = producing)
         const gridRaw = stateValue(h, c.grid_entity); // W  (positive = consuming, negative = feeding)
         const batteryRaw = stateValue(h, c.battery_entity); // W  (positive = discharging, negative = charging)
         const soc = stateValue(h, c.battery_soc_entity); // %
         const house = stateValue(h, c.house_entity); // W  (positive = consuming)
+        const solar =
+            solarRaw !== null && Math.abs(solarRaw) < FLOW_DEADBAND_W
+                ? 0
+                : solarRaw;
         const grid =
             gridRaw !== null && Math.abs(gridRaw) < FLOW_DEADBAND_W
                 ? 0
@@ -486,7 +490,8 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         // ── Animate flows ───────────────────────────────────
 
         // Solar → Home
-        const solarActive = solar !== null && solar > 10;
+        const solarActive =
+            solar !== null && Math.abs(solar) >= FLOW_DEADBAND_W;
         this._toggleDots(
             root,
             ["dot-solar-1", "dot-solar-2", "dot-solar-3"],
@@ -597,8 +602,13 @@ class AlphaESSPowerFlowCard extends HTMLElement {
             const dot = root.getElementById(id);
             if (dot) {
                 dot.classList.toggle("active", active);
-                if (!active) dot.setAttribute("r", "0");
-                else if (dot.getAttribute("r") === "0")
+                if (!active) {
+                    dot.setAttribute("r", "0");
+                    dot.setAttribute("display", "none");
+                } else {
+                    dot.removeAttribute("display");
+                }
+                if (active && dot.getAttribute("r") === "0")
                     dot.setAttribute("r", "4");
             }
         });
@@ -642,14 +652,10 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         if (line)
             line.setAttribute("stroke-width", visuals.strokeWidth.toFixed(2));
 
-        const dur = `${visuals.duration.toFixed(2)}s`;
         dotIds.forEach((id) => {
             const dot = root.getElementById(id);
             if (!dot) return;
             dot.setAttribute("r", visuals.dotRadius.toFixed(2));
-            dot.querySelectorAll("animate, animateMotion").forEach((anim) => {
-                anim.setAttribute("dur", dur);
-            });
         });
     }
 }

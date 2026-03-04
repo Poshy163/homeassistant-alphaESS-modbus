@@ -37,6 +37,7 @@ URL_BASE = "/alphaess_modbus"
 LEGACY_URL_BASE = "/custom_components/alphaess_modbus/www"
 CARD_JS = "alphaess-card.js"
 CARD_ENTITIES_JS = "alphaess-entities-cards.js"
+CARD_MODERN_JS = "alphaess-modern-cards.js"
 DATA_CARD_REGISTERED = f"{DOMAIN}_card_registered"
 DATA_CARD_REGISTER_LOCK = f"{DOMAIN}_card_register_lock"
 
@@ -108,6 +109,7 @@ async def _async_register_custom_cards(hass: HomeAssistant) -> None:
         www_dir = Path(__file__).parent / "www"
         card_path = www_dir / CARD_JS
         entities_path = www_dir / CARD_ENTITIES_JS
+        modern_cards_path = www_dir / CARD_MODERN_JS
 
         if not card_path.is_file():
             _LOGGER.error(
@@ -123,11 +125,20 @@ async def _async_register_custom_cards(hass: HomeAssistant) -> None:
             )
             return
 
+        if not modern_cards_path.is_file():
+            _LOGGER.error(
+                "Modern cards JS not found at %s – custom cards will not load",
+                modern_cards_path,
+            )
+            return
+
         resources = [
             (f"{URL_BASE}/{CARD_JS}", str(card_path)),
             (f"{URL_BASE}/{CARD_ENTITIES_JS}", str(entities_path)),
+            (f"{URL_BASE}/{CARD_MODERN_JS}", str(modern_cards_path)),
             (f"{LEGACY_URL_BASE}/{CARD_JS}", str(card_path)),
             (f"{LEGACY_URL_BASE}/{CARD_ENTITIES_JS}", str(entities_path)),
+            (f"{LEGACY_URL_BASE}/{CARD_MODERN_JS}", str(modern_cards_path)),
         ]
 
         for url_path, file_path in resources:
@@ -158,6 +169,10 @@ async def _async_register_custom_cards(hass: HomeAssistant) -> None:
             add_extra_js_url(
                 hass,
                 f"{URL_BASE}/{CARD_ENTITIES_JS}",
+            )
+            add_extra_js_url(
+                hass,
+                f"{URL_BASE}/{CARD_MODERN_JS}",
             )
         except Exception:
             _LOGGER.exception("Failed to add AlphaESS card JS URLs")

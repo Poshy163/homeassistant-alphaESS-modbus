@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlphaESS Card Dev Test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #101317;
+      color: #e7e7e7;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, 520px) minmax(320px, 420px);
+      gap: 16px;
+      align-items: start;
+    }
+    .panel {
+      background: #1a1f26;
+      border: 1px solid #2b3340;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .controls {
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 85px 1fr 90px;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    input[type="number"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 4px 6px;
+      background: #0f1318;
+      color: #e7e7e7;
+      border: 1px solid #2b3340;
+      border-radius: 6px;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    button {
+      padding: 6px 10px;
+      border: 1px solid #3d4758;
+      background: #243041;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2a3950;
+    }
+    #cardHost {
+      min-height: 320px;
+    }
+    .card-stack {
+      display: grid;
+      gap: 12px;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #a5b0bf;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="panel" id="cardHost">
+      <h2>Card Preview</h2>
+      <div class="card-stack">
+        <alphaess-power-flow-card id="card"></alphaess-power-flow-card>
+        <alphaess-ribbon-flow-card id="cardRibbon"></alphaess-ribbon-flow-card>
+        <alphaess-live-kpi-card id="cardLive"></alphaess-live-kpi-card>
+        <alphaess-battery-insight-card id="cardBattery"></alphaess-battery-insight-card>
+        <alphaess-energy-summary-card id="cardSummary"></alphaess-energy-summary-card>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Mock Sensor Values</h2>
+      <div class="controls">
+        <label class="row">
+          <span>Solar (W)</span>
+          <input id="solar" type="range" min="0" max="8000" step="10" value="0" />
+          <input id="solarNum" type="number" min="0" max="8000" step="10" value="0" />
+        </label>
+
+        <label class="row">
+          <span>Grid (W)</span>
+          <input id="grid" type="range" min="-8000" max="8000" step="10" value="0" />
+          <input id="gridNum" type="number" min="-8000" max="8000" step="10" value="0" />
+        </label>
+
+        <label class="row">
+          <span>Battery (W)</span>
+          <input id="battery" type="range" min="-8000" max="8000" step="10" value="0" />
+          <input id="batteryNum" type="number" min="-8000" max="8000" step="10" value="0" />
+        </label>
+
+        <label class="row">
+          <span>Home (W)</span>
+          <input id="house" type="range" min="0" max="8000" step="10" value="0" />
+          <input id="houseNum" type="number" min="0" max="8000" step="10" value="0" />
+        </label>
+
+        <label class="row">
+          <span>SoC (%)</span>
+          <input id="soc" type="range" min="0" max="100" step="1" value="62" />
+          <input id="socNum" type="number" min="0" max="100" step="1" value="62" />
+        </label>
+
+        <div class="buttons">
+          <button id="scenarioIdle">Idle (all 0)</button>
+          <button id="scenarioDay">Sunny Day</button>
+          <button id="scenarioNight">Night Load</button>
+          <button id="scenarioExport">Exporting</button>
+        </div>
+      </div>
+
+      <div class="hint">
+        Grid: positive = importing, negative = exporting.<br />
+        Battery: positive = discharging, negative = charging.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import "./custom_components/alphaess_modbus/www/alphaess-card.js";
+    import "./custom_components/alphaess_modbus/www/alphaess-modern-cards.js";
+
+    const ENTITIES = {
+      solar: "sensor.alphaess_current_pv_production",
+      grid: "sensor.alphaess_power_grid",
+      battery: "sensor.alphaess_power_battery",
+      battery_soc: "sensor.alphaess_soc_battery",
+      house: "sensor.alphaess_current_house_load",
+      soh: "sensor.alphaess_soh_battery",
+      battery_voltage: "sensor.alphaess_battery_voltage",
+      battery_current: "sensor.alphaess_battery_current",
+      battery_status: "sensor.alphaess_battery_status",
+      total_pv: "sensor.alphaess_total_energy_from_pv",
+      total_house: "sensor.alphaess_total_house_load",
+      total_grid_import: "sensor.alphaess_total_energy_consumption_from_grid_meter",
+      total_grid_export: "sensor.alphaess_total_energy_feed_to_grid_meter",
+      total_batt_charge: "sensor.alphaess_total_energy_charge_battery",
+      total_batt_discharge: "sensor.alphaess_total_energy_discharge_battery",
+    };
+
+    const state = {
+      solar: 0,
+      grid: 0,
+      battery: 0,
+      house: 0,
+      soc: 62,
+      soh: 96,
+      battery_voltage: 51.2,
+      total_pv: 8420,
+      total_house: 6130,
+      total_grid_import: 2210,
+      total_grid_export: 980,
+      total_batt_charge: 1730,
+      total_batt_discharge: 1490,
+    };
+
+    const card = document.getElementById("card");
+    const cardRibbon = document.getElementById("cardRibbon");
+    const cardLive = document.getElementById("cardLive");
+    const cardBattery = document.getElementById("cardBattery");
+    const cardSummary = document.getElementById("cardSummary");
+
+    card.setConfig({
+      title: "AlphaESS Power Flow (Dev Mock)",
+      solar_entity: ENTITIES.solar,
+      grid_entity: ENTITIES.grid,
+      battery_entity: ENTITIES.battery,
+      battery_soc_entity: ENTITIES.battery_soc,
+      house_entity: ENTITIES.house,
+      unit: "auto",
+    });
+
+    cardLive.setConfig({
+      title: "AlphaESS Live KPIs (Dev Mock)",
+      solar_entity: ENTITIES.solar,
+      house_entity: ENTITIES.house,
+      grid_entity: ENTITIES.grid,
+      battery_entity: ENTITIES.battery,
+    });
+
+    cardRibbon.setConfig({
+      title: "AlphaESS Ribbon Flow (Dev Mock)",
+      solar_entity: ENTITIES.solar,
+      house_entity: ENTITIES.house,
+      grid_entity: ENTITIES.grid,
+      battery_entity: ENTITIES.battery,
+    });
+
+    cardBattery.setConfig({
+      title: "AlphaESS Battery Insight (Dev Mock)",
+      soc_entity: ENTITIES.battery_soc,
+      soh_entity: ENTITIES.soh,
+      battery_entity: ENTITIES.battery,
+      battery_voltage_entity: ENTITIES.battery_voltage,
+      battery_current_entity: ENTITIES.battery_current,
+      battery_status_entity: ENTITIES.battery_status,
+    });
+
+    cardSummary.setConfig({
+      title: "AlphaESS Energy Summary (Dev Mock)",
+      total_pv_entity: ENTITIES.total_pv,
+      total_house_entity: ENTITIES.total_house,
+      total_grid_import_entity: ENTITIES.total_grid_import,
+      total_grid_export_entity: ENTITIES.total_grid_export,
+      total_batt_charge_entity: ENTITIES.total_batt_charge,
+      total_batt_discharge_entity: ENTITIES.total_batt_discharge,
+    });
+
+    function makeHass() {
+      const battCurrent = Number((state.battery / 50).toFixed(1));
+      const battStatus =
+        Math.abs(state.battery) < 30
+          ? "Idle"
+          : state.battery > 0
+            ? "Discharging"
+            : "Charging";
+
+      return {
+        states: {
+          [ENTITIES.solar]: { state: String(state.solar) },
+          [ENTITIES.grid]: { state: String(state.grid) },
+          [ENTITIES.battery]: { state: String(state.battery) },
+          [ENTITIES.battery_soc]: { state: String(state.soc) },
+          [ENTITIES.house]: { state: String(state.house) },
+          [ENTITIES.soh]: { state: String(state.soh) },
+          [ENTITIES.battery_voltage]: { state: String(state.battery_voltage) },
+          [ENTITIES.battery_current]: { state: String(battCurrent) },
+          [ENTITIES.battery_status]: { state: battStatus },
+          [ENTITIES.total_pv]: { state: String(state.total_pv) },
+          [ENTITIES.total_house]: { state: String(state.total_house) },
+          [ENTITIES.total_grid_import]: { state: String(state.total_grid_import) },
+          [ENTITIES.total_grid_export]: { state: String(state.total_grid_export) },
+          [ENTITIES.total_batt_charge]: { state: String(state.total_batt_charge) },
+          [ENTITIES.total_batt_discharge]: { state: String(state.total_batt_discharge) },
+        },
+      };
+    }
+
+    function render() {
+      const hass = makeHass();
+      card.hass = hass;
+      cardRibbon.hass = hass;
+      cardLive.hass = hass;
+      cardBattery.hass = hass;
+      cardSummary.hass = hass;
+    }
+
+    function bindPair(rangeId, numberId, key) {
+      const range = document.getElementById(rangeId);
+      const number = document.getElementById(numberId);
+
+      function set(v) {
+        const value = Number(v);
+        if (Number.isNaN(value)) return;
+        state[key] = value;
+        range.value = String(value);
+        number.value = String(value);
+        render();
+      }
+
+      range.addEventListener("input", () => set(range.value));
+      number.addEventListener("input", () => set(number.value));
+    }
+
+    bindPair("solar", "solarNum", "solar");
+    bindPair("grid", "gridNum", "grid");
+    bindPair("battery", "batteryNum", "battery");
+    bindPair("house", "houseNum", "house");
+    bindPair("soc", "socNum", "soc");
+
+    function applyScenario(values) {
+      Object.assign(state, values);
+      document.getElementById("solar").value = String(state.solar);
+      document.getElementById("solarNum").value = String(state.solar);
+      document.getElementById("grid").value = String(state.grid);
+      document.getElementById("gridNum").value = String(state.grid);
+      document.getElementById("battery").value = String(state.battery);
+      document.getElementById("batteryNum").value = String(state.battery);
+      document.getElementById("house").value = String(state.house);
+      document.getElementById("houseNum").value = String(state.house);
+      document.getElementById("soc").value = String(state.soc);
+      document.getElementById("socNum").value = String(state.soc);
+      render();
+    }
+
+    document.getElementById("scenarioIdle").addEventListener("click", () => {
+      applyScenario({ solar: 0, grid: 0, battery: 0, house: 0, soc: 62, soh: 96 });
+    });
+
+    document.getElementById("scenarioDay").addEventListener("click", () => {
+      applyScenario({ solar: 3200, house: 1400, battery: -1100, grid: 0, soc: 58, soh: 96 });
+    });
+
+    document.getElementById("scenarioNight").addEventListener("click", () => {
+      applyScenario({ solar: 0, house: 1200, battery: 700, grid: 500, soc: 44, soh: 95 });
+    });
+
+    document.getElementById("scenarioExport").addEventListener("click", () => {
+      applyScenario({ solar: 5000, house: 900, battery: -500, grid: -3600, soc: 77, soh: 96 });
+    });
+
+    render();
+  </script>
+</body>
+</html>
