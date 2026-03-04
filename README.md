@@ -24,7 +24,6 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 - **Custom Lovelace cards** — auto-loaded, no manual resource registration required:
   - **Power Flow card** — animated SVG visualisation of solar, grid, battery and home power flows
   - **9 Entity cards** — grouped entity lists (Overview, Charging, Solar, Battery, Grid, Dispatch, Grid Safety, Warnings & Faults, System) matching the native HA look
-   - **3 Modern cards** — compact dashboard cards for live KPIs, battery insight, and energy summary
 - **Services** — `write_register`, `read_register`, `batch_read`
 
 ## Supported inverters
