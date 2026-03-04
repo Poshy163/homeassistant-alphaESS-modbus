@@ -322,7 +322,7 @@ class AlphaESSPowerFlowCard extends HTMLElement {
           <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <!-- Flow line paths (used for dot motion) -->
-              <path id="path-solar-home" d="M 250,75 L 250,195" />
+              <path id="path-solar-home" d="M 250,77 L 250,129" />
               <path id="path-grid-home"  d="M 105,165 L 205,165" />
               <path id="path-batt-home"  d="M 395,165 L 295,165" />
             </defs>
@@ -337,14 +337,14 @@ class AlphaESSPowerFlowCard extends HTMLElement {
 
             <!-- ── ANIMATED DOTS ────────────────────────── -->
             <!-- Solar → Home -->
-            <circle class="flow-dot" id="dot-solar-1" cx="250" cy="75" fill="${COLORS.solar}">
-              <animate attributeName="cy" values="75;195" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-solar-1" cx="250" cy="77" fill="${COLORS.solar}">
+                            <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-solar-2" cx="250" cy="75" fill="${COLORS.solar}">
-              <animate attributeName="cy" values="75;195" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-solar-2" cx="250" cy="77" fill="${COLORS.solar}">
+                            <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-solar-3" cx="250" cy="75" fill="${COLORS.solar}">
-              <animate attributeName="cy" values="75;195" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-solar-3" cx="250" cy="77" fill="${COLORS.solar}">
+                            <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
             </circle>
 
             <!-- Grid ↔ Home -->
