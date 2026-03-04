@@ -10,7 +10,7 @@
 
 console.debug("[alphaess-card] Loading alphaess-power-flow-card module…");
 
-const CARD_VERSION = "1.0.8";
+const CARD_VERSION = "1.1.1";
 
 /* ─── default entity IDs (auto-match the alphaess_modbus integration) ── */
 const DEFAULTS = {
@@ -34,6 +34,8 @@ const COLORS = {
     secondary: "var(--secondary-text-color, #aaa)",
     card_bg: "var(--ha-card-background, var(--card-background-color, #1c1c1c))",
 };
+
+const FLOW_DEADBAND_W = 30;
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */
 function stateValue(hass, entityId) {
@@ -323,8 +325,8 @@ class AlphaESSPowerFlowCard extends HTMLElement {
             <defs>
               <!-- Flow line paths (used for dot motion) -->
               <path id="path-solar-home" d="M 250,77 L 250,129" />
-              <path id="path-grid-home"  d="M 105,165 L 205,165" />
-              <path id="path-batt-home"  d="M 395,165 L 295,165" />
+                            <path id="path-grid-home"  d="M 107,165 L 214,165" />
+                            <path id="path-batt-home"  d="M 393,165 L 286,165" />
             </defs>
 
             <!-- ── FLOW LINES ───────────────────────────── -->
@@ -337,36 +339,45 @@ class AlphaESSPowerFlowCard extends HTMLElement {
 
             <!-- ── ANIMATED DOTS ────────────────────────── -->
             <!-- Solar → Home -->
-                        <circle class="flow-dot" id="dot-solar-1" cx="250" cy="77" fill="${COLORS.solar}">
-                            <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
+                                                <circle class="flow-dot" id="dot-solar-1" cx="250" cy="77" fill="${COLORS.solar}">
+                                                        <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
+                                                        <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
             </circle>
-                        <circle class="flow-dot" id="dot-solar-2" cx="250" cy="77" fill="${COLORS.solar}">
-                            <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
+                                                <circle class="flow-dot" id="dot-solar-2" cx="250" cy="77" fill="${COLORS.solar}">
+                                                        <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
+                                                        <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
             </circle>
-                        <circle class="flow-dot" id="dot-solar-3" cx="250" cy="77" fill="${COLORS.solar}">
-                            <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
+                                                <circle class="flow-dot" id="dot-solar-3" cx="250" cy="77" fill="${COLORS.solar}">
+                                                        <animate attributeName="cy" values="77;129" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
+                                                        <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
             </circle>
 
             <!-- Grid ↔ Home -->
-            <circle class="flow-dot" id="dot-grid-1" cx="105" cy="165" fill="${COLORS.grid_consume}">
-              <animate attributeName="cx" values="105;205" dur="1.5s" repeatCount="indefinite" id="anim-grid-1" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-grid-1" cx="107" cy="165" fill="${COLORS.grid_consume}">
+                            <animate attributeName="cx" values="107;214" dur="1.5s" repeatCount="indefinite" id="anim-grid-1" calcMode="linear" />
+                            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-grid-2" cx="105" cy="165" fill="${COLORS.grid_consume}">
-              <animate attributeName="cx" values="105;205" dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-grid-2" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-grid-2" cx="107" cy="165" fill="${COLORS.grid_consume}">
+                            <animate attributeName="cx" values="107;214" dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-grid-2" calcMode="linear" />
+                            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-grid-3" cx="105" cy="165" fill="${COLORS.grid_consume}">
-              <animate attributeName="cx" values="105;205" dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-grid-3" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-grid-3" cx="107" cy="165" fill="${COLORS.grid_consume}">
+                            <animate attributeName="cx" values="107;214" dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-grid-3" calcMode="linear" />
+                            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
             </circle>
 
             <!-- Battery ↔ Home -->
-            <circle class="flow-dot" id="dot-batt-1" cx="395" cy="165" fill="${COLORS.battery_charge}">
-              <animate attributeName="cx" values="395;295" dur="1.5s" repeatCount="indefinite" id="anim-batt-1" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-batt-1" cx="393" cy="165" fill="${COLORS.battery_charge}">
+                            <animate attributeName="cx" values="393;286" dur="1.5s" repeatCount="indefinite" id="anim-batt-1" calcMode="linear" />
+                            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-batt-2" cx="395" cy="165" fill="${COLORS.battery_charge}">
-              <animate attributeName="cx" values="395;295" dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-batt-2" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-batt-2" cx="393" cy="165" fill="${COLORS.battery_charge}">
+                            <animate attributeName="cx" values="393;286" dur="1.5s" repeatCount="indefinite" begin="0.5s" id="anim-batt-2" calcMode="linear" />
+                            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="0.5s" calcMode="linear" />
             </circle>
-            <circle class="flow-dot" id="dot-batt-3" cx="395" cy="165" fill="${COLORS.battery_charge}">
-              <animate attributeName="cx" values="395;295" dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-batt-3" calcMode="linear" />
+                        <circle class="flow-dot" id="dot-batt-3" cx="393" cy="165" fill="${COLORS.battery_charge}">
+                            <animate attributeName="cx" values="393;286" dur="1.5s" repeatCount="indefinite" begin="1s" id="anim-batt-3" calcMode="linear" />
+                            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" dur="1.5s" repeatCount="indefinite" begin="1s" calcMode="linear" />
             </circle>
 
             <!-- ── NODE: SOLAR (top centre) ─────────────── -->
@@ -420,10 +431,18 @@ class AlphaESSPowerFlowCard extends HTMLElement {
 
         // Read raw state values
         const solar = stateValue(h, c.solar_entity); // W  (positive = producing)
-        const grid = stateValue(h, c.grid_entity); // W  (positive = consuming, negative = feeding)
-        const battery = stateValue(h, c.battery_entity); // W  (positive = discharging, negative = charging)
+        const gridRaw = stateValue(h, c.grid_entity); // W  (positive = consuming, negative = feeding)
+        const batteryRaw = stateValue(h, c.battery_entity); // W  (positive = discharging, negative = charging)
         const soc = stateValue(h, c.battery_soc_entity); // %
         const house = stateValue(h, c.house_entity); // W  (positive = consuming)
+        const grid =
+            gridRaw !== null && Math.abs(gridRaw) < FLOW_DEADBAND_W
+                ? 0
+                : gridRaw;
+        const battery =
+            batteryRaw !== null && Math.abs(batteryRaw) < FLOW_DEADBAND_W
+                ? 0
+                : batteryRaw;
 
         // ── Update value text ───────────────────────────────
         const setTxt = (id, val) => {
@@ -477,7 +496,7 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         this._toggleCircle(root, "circle-solar", solarActive);
 
         // Grid ↔ Home  (positive = import = grid→home; negative = export = home→grid)
-        const gridActive = grid !== null && Math.abs(grid) > 10;
+        const gridActive = grid !== null && Math.abs(grid) >= FLOW_DEADBAND_W;
         const gridImporting = grid > 0;
         this._toggleDots(
             root,
@@ -505,11 +524,12 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         this._setDotDirection(
             root,
             ["anim-grid-1", "anim-grid-2", "anim-grid-3"],
-            gridImporting ? "105;205" : "205;105",
+            gridImporting ? "107;214" : "214;107",
         );
 
         // Battery ↔ Home  (positive = discharge = batt→home; negative = charge = home→batt)
-        const battActive = battery !== null && Math.abs(battery) > 10;
+        const battActive =
+            battery !== null && Math.abs(battery) >= FLOW_DEADBAND_W;
         const battDischarging = battery > 0;
         this._toggleDots(
             root,
@@ -536,7 +556,37 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         this._setDotDirection(
             root,
             ["anim-batt-1", "anim-batt-2", "anim-batt-3"],
-            battDischarging ? "395;295" : "295;395",
+            battDischarging ? "393;286" : "286;393",
+        );
+
+        // Adaptive flow thickness + speed (higher W = thicker + faster)
+        const solarPower = Math.max(0, solar || 0);
+        const gridPower = Math.abs(grid || 0);
+        const battPower = Math.abs(battery || 0);
+
+        this._applyFlowVisuals(
+            root,
+            "line-solar-home",
+            ["dot-solar-1", "dot-solar-2", "dot-solar-3"],
+            solarPower,
+            solarActive,
+            1.5,
+        );
+        this._applyFlowVisuals(
+            root,
+            "line-grid-home",
+            ["dot-grid-1", "dot-grid-2", "dot-grid-3"],
+            gridPower,
+            gridActive,
+            1.5,
+        );
+        this._applyFlowVisuals(
+            root,
+            "line-batt-home",
+            ["dot-batt-1", "dot-batt-2", "dot-batt-3"],
+            battPower,
+            battActive,
+            1.5,
         );
     }
 
@@ -547,7 +597,9 @@ class AlphaESSPowerFlowCard extends HTMLElement {
             const dot = root.getElementById(id);
             if (dot) {
                 dot.classList.toggle("active", active);
-                dot.setAttribute("r", active ? "4" : "0");
+                if (!active) dot.setAttribute("r", "0");
+                else if (dot.getAttribute("r") === "0")
+                    dot.setAttribute("r", "4");
             }
         });
     }
@@ -566,6 +618,38 @@ class AlphaESSPowerFlowCard extends HTMLElement {
         animIds.forEach((id) => {
             const anim = root.getElementById(id);
             if (anim) anim.setAttribute("values", values);
+        });
+    }
+
+    _flowVisualForPower(powerAbs, baseDuration) {
+        const power = Math.max(0, Math.min(6000, powerAbs || 0));
+        const ratio = power / 6000;
+        return {
+            strokeWidth: 2 + ratio * 2.2,
+            dotRadius: 3.2 + ratio * 1.8,
+            duration: baseDuration - ratio * (baseDuration - 0.75),
+        };
+    }
+
+    _applyFlowVisuals(root, lineId, dotIds, powerAbs, active, baseDuration) {
+        const line = root.getElementById(lineId);
+        if (!active) {
+            if (line) line.setAttribute("stroke-width", "2");
+            return;
+        }
+
+        const visuals = this._flowVisualForPower(powerAbs, baseDuration);
+        if (line)
+            line.setAttribute("stroke-width", visuals.strokeWidth.toFixed(2));
+
+        const dur = `${visuals.duration.toFixed(2)}s`;
+        dotIds.forEach((id) => {
+            const dot = root.getElementById(id);
+            if (!dot) return;
+            dot.setAttribute("r", visuals.dotRadius.toFixed(2));
+            dot.querySelectorAll("animate, animateMotion").forEach((anim) => {
+                anim.setAttribute("dur", dur);
+            });
         });
     }
 }
