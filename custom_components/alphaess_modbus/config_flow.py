@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
+from pymodbus.client import AsyncModbusTcpClient
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
@@ -14,6 +17,7 @@ from .const import (
     CONF_SLAVE_ID,
     DEFAULT_AC_LIMIT_KW,
     DEFAULT_PORT,
+    REG_INVERTER_SN,
     DEFAULT_SLAVE_ID,
     DOMAIN,
     INVERTER_MODELS,
@@ -21,6 +25,32 @@ from .const import (
 )
 
 DEFAULT_NAME = "AlphaESS"
+_LOGGER = logging.getLogger(__name__)
+
+
+async def _async_read_inverter_serial(host: str, port: int, slave_id: int) -> str | None:
+    """Try to read inverter serial number via Modbus (0x064A..0x0653)."""
+    client = AsyncModbusTcpClient(host=host, port=port, timeout=5)
+    try:
+        if not await client.connect():
+            return None
+
+        result = await client.read_holding_registers(
+            address=REG_INVERTER_SN,
+            count=10,
+            device_id=slave_id,
+        )
+        if result.isError():
+            return None
+
+        raw_bytes = b"".join(r.to_bytes(2, byteorder="big") for r in result.registers)
+        serial = raw_bytes.decode("ascii", errors="replace").rstrip("\x00").strip()
+        return serial or None
+    except Exception:  # noqa: BLE001
+        _LOGGER.debug("Could not read inverter serial during config flow", exc_info=True)
+        return None
+    finally:
+        client.close()
 
 
 class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -33,15 +63,16 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host = str(user_input.get(CONF_HOST, "") or "")
             port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
             slave_id = int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
-            unique = build_entry_unique_id(host, port, slave_id)
-            await self.async_set_unique_id(unique)
-            self._abort_if_unique_id_configured()
 
-            if not user_input.get(CONF_HOST):
+            if not host:
                 errors["base"] = "invalid_connection"
             elif not user_input.get(CONF_MODEL) or user_input[CONF_MODEL] == "-- Select Inverter --":
                 errors["base"] = "invalid_model"
             else:
+                serial_number = await _async_read_inverter_serial(host, port, slave_id)
+                unique = build_entry_unique_id(host, port, slave_id, serial_number=serial_number)
+                await self.async_set_unique_id(unique)
+                self._abort_if_unique_id_configured()
                 user_input[CONF_NAME] = DEFAULT_NAME
                 return self.async_create_entry(title=DEFAULT_NAME, data=user_input)
 

@@ -181,6 +181,14 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
             value = self._apply_model_adjustment(desc.key, value)
             if desc.precision is not None:
                 value = round(value, desc.precision)
+            elif (
+                desc.register_type in (RegisterType.UINT16, RegisterType.INT16, RegisterType.UINT32, RegisterType.INT32)
+                and float(desc.scale).is_integer()
+                and float(desc.offset).is_integer()
+            ):
+                # Preserve whole-number registers as int so HA does not render
+                # values like "1.0" for enum/status sensors.
+                value = int(value)
             data[desc.key] = value
 
         # ── Compute derived / template sensors ───────────────────────

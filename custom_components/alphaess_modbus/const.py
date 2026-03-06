@@ -43,8 +43,26 @@ FAST_POLL_1S_KEYS: set[str] = {
 }
 
 
-def build_entry_unique_id(host: str, port: int, slave_id: int) -> str:
-    """Build a stable unique_id for a Modbus device endpoint."""
+def _normalize_serial_for_unique_id(serial_number: str) -> str:
+    """Normalize inverter serial into a safe unique-id fragment."""
+    normalized = "".join(
+        ch for ch in serial_number.strip() if ch.isalnum() or ch in ("-", "_")
+    )
+    return normalized.lower()
+
+
+def build_entry_unique_id(
+    host: str,
+    port: int,
+    slave_id: int,
+    serial_number: str | None = None,
+) -> str:
+    """Build a stable unique_id, preferring inverter serial number if available."""
+    if serial_number:
+        normalized_serial = _normalize_serial_for_unique_id(serial_number)
+        if normalized_serial:
+            return f"sn-{normalized_serial}"
+
     normalized_host = host.strip().lower()
     return f"tcp-{normalized_host}:{port}-slave-{slave_id}"
 
@@ -237,6 +255,7 @@ REG_SYSTEM_FAULT = 0x08D4
 # Inverter Version (string registers, 5 registers = 10 ASCII chars)
 REG_INVERTER_VERSION = 0x0640
 REG_INVERTER_ARM_VERSION = 0x0645
+REG_INVERTER_SN = 0x064A
 
 # Grid Safety
 REG_GRID_REGULATION = 0x1000

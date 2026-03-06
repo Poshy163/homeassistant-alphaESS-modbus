@@ -14,6 +14,7 @@ from .const import (
     CORE_SENSOR_DESCRIPTIONS,
     DOMAIN,
     KW_SENSOR_DESCRIPTIONS,
+    RegisterType,
     AlphaESSComputedSensorDescription,
     AlphaESSModbusSensorDescription,
 )
@@ -72,7 +73,16 @@ class AlphaESSModbusSensor(AlphaESSBaseEntity, SensorEntity):
     @property
     def native_value(self) -> float | str | None:
         """Return the sensor value from coordinator data."""
-        return self.coordinator.data.get(self._description.key)
+        value = self.coordinator.data.get(self._description.key)
+        if (
+            isinstance(value, float)
+            and value.is_integer()
+            and self._description.precision in (None, 0)
+            and self._description.register_type
+            in (RegisterType.UINT16, RegisterType.INT16, RegisterType.UINT32, RegisterType.INT32)
+        ):
+            return int(value)
+        return value
 
 
 class AlphaESSComputedSensor(AlphaESSBaseEntity, SensorEntity):
