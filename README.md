@@ -89,6 +89,19 @@ included dashboard file above.
 Legacy package-era timer entities (`timer.alphaess_*`) are not part of the
 integration-native model.
 
+## Reduce Logbook Spam (Optional)
+
+If your Logbook is noisy from frequent state changes, add this to your
+`configuration.yaml`:
+
+```yaml
+logbook:
+   exclude:
+      entities:
+         - sensor.alphaess_system_time
+         - automation.alphaess_excess_export
+```
+
 ## Credits
 
 - Axel Koegler (SaaX-IRL) for original AlphaESS Modbus register research and documentation.

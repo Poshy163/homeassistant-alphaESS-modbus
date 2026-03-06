@@ -22,7 +22,6 @@ from .entity import AlphaESSBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -79,7 +78,12 @@ class AlphaESSModbusSensor(AlphaESSBaseEntity, SensorEntity):
             and value.is_integer()
             and self._description.precision in (None, 0)
             and self._description.register_type
-            in (RegisterType.UINT16, RegisterType.INT16, RegisterType.UINT32, RegisterType.INT32)
+            in (
+                RegisterType.UINT16,
+                RegisterType.INT16,
+                RegisterType.UINT32,
+                RegisterType.INT32,
+            )
         ):
             return int(value)
         return value

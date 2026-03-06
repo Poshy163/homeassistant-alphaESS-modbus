@@ -25,6 +25,10 @@ from .hub import AlphaESSModbusHub
 
 _LOGGER = logging.getLogger(__name__)
 
+_SERIAL_SENSOR_KEYS = {
+    "inverter_sn",
+}
+
 
 def _int32_to_ip(value: int | float | None) -> str | None:
     """Convert a 32-bit integer (or float) to a dotted-quad IP string."""
@@ -168,11 +172,21 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
                 continue
 
             if raw is None:
+                if desc.key in _SERIAL_SENSOR_KEYS:
+                    _LOGGER.debug(
+                        "[SN] No data for %s at 0x%04X (poll_cycle=%s slow_cycle=%s)",
+                        desc.key,
+                        desc.address,
+                        self._poll_cycle,
+                        is_slow_cycle,
+                    )
                 data[desc.key] = None
                 continue
 
             # STRING registers are already decoded as str
             if desc.register_type == RegisterType.STRING:
+                if desc.key in _SERIAL_SENSOR_KEYS:
+                    _LOGGER.debug("[SN] %s decoded STRING value=%r", desc.key, raw)
                 data[desc.key] = raw
                 continue
 
@@ -182,13 +196,20 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
             if desc.precision is not None:
                 value = round(value, desc.precision)
             elif (
-                desc.register_type in (RegisterType.UINT16, RegisterType.INT16, RegisterType.UINT32, RegisterType.INT32)
+                desc.register_type in (
+                    RegisterType.UINT16,
+                    RegisterType.INT16,
+                    RegisterType.UINT32,
+                    RegisterType.INT32,
+                )
                 and float(desc.scale).is_integer()
                 and float(desc.offset).is_integer()
             ):
                 # Preserve whole-number registers as int so HA does not render
                 # values like "1.0" for enum/status sensors.
                 value = int(value)
+            if desc.key in _SERIAL_SENSOR_KEYS:
+                _LOGGER.debug("[SN] %s decoded numeric value=%s", desc.key, value)
             data[desc.key] = value
 
         # ── Compute derived / template sensors ───────────────────────

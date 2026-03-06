@@ -19,6 +19,11 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def _is_serial_debug_address(address: int) -> bool:
+    """Return True for known inverter serial register range."""
+    return address == 0x064A
+
+
 class AlphaESSModbusHub:
     """Manage the Modbus TCP connection to an AlphaESS inverter."""
 
@@ -118,17 +123,44 @@ class AlphaESSModbusHub:
             count = 1
 
         try:
+            read_kind = "holding"
             result = await self._client.read_holding_registers(
                 address=address, count=count, device_id=slave,
             )
 
             if result.isError():
+                # Some AlphaESS RO blocks are exposed via input registers on
+                # certain firmware/models. Retry once using FC04.
                 _LOGGER.debug(
-                    "Modbus read error at 0x%04X: %s", address, result
+                    "Holding-register read error at 0x%04X: %s; retrying as input register",
+                    address,
+                    result,
                 )
-                return None
+                read_kind = "input"
+                result = await self._client.read_input_registers(
+                    address=address,
+                    count=count,
+                    device_id=slave,
+                )
+                if result.isError():
+                    _LOGGER.debug(
+                        "Input-register read error at 0x%04X: %s",
+                        address,
+                        result,
+                    )
+                    return None
 
             regs = result.registers
+
+            if _is_serial_debug_address(address):
+                _LOGGER.debug(
+                    "[SN] Read %s regs @0x%04X count=%d slave=%s values=%s",
+                    read_kind,
+                    address,
+                    count,
+                    slave,
+                    [f"0x{reg:04X}" for reg in regs],
+                )
 
             if register_type == RegisterType.STRING:
                 # Decode registers as big-endian ASCII bytes
@@ -136,7 +168,15 @@ class AlphaESSModbusHub:
                 for r in regs:
                     raw_bytes += r.to_bytes(2, byteorder="big")
                 # Strip null bytes and whitespace
-                return raw_bytes.decode("ascii", errors="replace").rstrip("\x00").strip()
+                decoded = raw_bytes.decode("ascii", errors="replace").rstrip("\x00").strip()
+                if _is_serial_debug_address(address):
+                    _LOGGER.debug(
+                        "[SN] STRING decode @0x%04X bytes=%s decoded=%r",
+                        address,
+                        raw_bytes.hex(),
+                        decoded,
+                    )
+                return decoded
 
             if register_type == RegisterType.UINT16:
                 return regs[0]
@@ -157,9 +197,13 @@ class AlphaESSModbusHub:
             return combined
 
         except ModbusException as exc:
+            if _is_serial_debug_address(address):
+                _LOGGER.debug("[SN] Modbus exception at 0x%04X: %s", address, exc)
             _LOGGER.debug("Modbus exception reading 0x%04X: %s", address, exc)
             return None
         except Exception:
+            if _is_serial_debug_address(address):
+                _LOGGER.exception("[SN] Unexpected exception reading serial register 0x%04X", address)
             _LOGGER.exception("Unexpected error reading register 0x%04X", address)
             return None
 
