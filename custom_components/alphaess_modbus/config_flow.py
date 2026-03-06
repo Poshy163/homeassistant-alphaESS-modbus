@@ -56,7 +56,7 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return vol.Schema(
             {
                 vol.Required(CONF_HOST): str,
-                vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
+                vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                 vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
                 vol.Required(CONF_MODEL): vol.In(INVERTER_MODELS),
                 vol.Required(
@@ -77,7 +77,7 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return vol.Schema(
             {
                 vol.Required(CONF_HOST, default=merged.get(CONF_HOST, "")): str,
-                vol.Optional(CONF_PORT, default=merged.get(CONF_PORT, DEFAULT_PORT)): int,
+                vol.Required(CONF_PORT, default=merged.get(CONF_PORT, DEFAULT_PORT)): int,
                 vol.Required(CONF_SLAVE_ID, default=merged.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)): int,
                 vol.Required(CONF_MODEL, default=merged.get(CONF_MODEL)): vol.In(INVERTER_MODELS),
                 vol.Required(
