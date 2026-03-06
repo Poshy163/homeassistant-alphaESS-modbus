@@ -334,135 +334,32 @@ class AlphaESSComputedSensorDescription:
     is_diagnostic: bool = False
 
 
-# ───────────────────── Sensor descriptions (loaded from YAML) ────────────
-#
-# All Modbus register sensors and computed sensors are defined in
-# integration_alpha_ess.yaml (Axel Koegler's HA packages file) and
-# loaded dynamically by yaml_loader.py.
-#
-# To add a new sensor, edit integration_alpha_ess.yaml — no Python
-# changes needed (unless the sensor requires computed/derived logic).
-#
-# The tuples below are populated lazily on first access so that YAML is
-# only parsed once, and so that the dataclass imports are already available.
+# ───────────────────── Sensor descriptions (static registry) ─────────────
 
-_SENSOR_CACHE: dict[str, tuple] = {}
+from .sensor_registry import (
+    COMPUTED_SENSOR_DEFINITIONS,
+    CORE_SENSOR_DEFINITIONS,
+    INTERNAL_REGISTER_DEFINITIONS,
+)
 
+CORE_SENSOR_DESCRIPTIONS = CORE_SENSOR_DEFINITIONS
+INTERNAL_REGISTER_DESCRIPTIONS = INTERNAL_REGISTER_DEFINITIONS
+COMPUTED_SENSOR_DESCRIPTIONS = COMPUTED_SENSOR_DEFINITIONS
 
-def _ensure_loaded() -> None:
-    """Parse integration_alpha_ess.yaml once and cache the results."""
-    if _SENSOR_CACHE:
-        return
-    from .yaml_loader import load_modbus_sensor_defs, load_computed_sensor_defs
-
-    core, internal = load_modbus_sensor_defs()
-    computed = load_computed_sensor_defs()
-    _SENSOR_CACHE["core"] = core
-    _SENSOR_CACHE["internal"] = internal
-    _SENSOR_CACHE["computed"] = computed
-
-
-@property  # type: ignore[misc]
-def _core_accessor(self):  # noqa: N805 — not a real method
-    ...  # pragma: no cover
-
-
-# Convenience functions (module-level tuples are replaced by these)
-def _get_core() -> tuple[AlphaESSModbusSensorDescription, ...]:
-    _ensure_loaded()
-    return _SENSOR_CACHE["core"]  # type: ignore[return-value]
-
-
-def _get_internal() -> tuple[AlphaESSModbusSensorDescription, ...]:
-    _ensure_loaded()
-    return _SENSOR_CACHE["internal"]  # type: ignore[return-value]
-
-
-def _get_computed() -> tuple[AlphaESSComputedSensorDescription, ...]:
-    _ensure_loaded()
-    return _SENSOR_CACHE["computed"]  # type: ignore[return-value]
-
-
-class _LazyDescriptors:
-    """Module-level lazy accessors for sensor description tuples.
-
-    Allows ``from .const import CORE_SENSOR_DESCRIPTIONS`` to keep working
-    while deferring YAML parsing until the value is actually read.
-    """
-
-    @staticmethod
-    def core() -> tuple[AlphaESSModbusSensorDescription, ...]:
-        return _get_core()
-
-    @staticmethod
-    def internal() -> tuple[AlphaESSModbusSensorDescription, ...]:
-        return _get_internal()
-
-    @staticmethod
-    def computed() -> tuple[AlphaESSComputedSensorDescription, ...]:
-        return _get_computed()
-
-
-# These module-level names are the public API consumed by sensor.py,
-# coordinator.py, etc.  They call through to the lazy loader.
-# We define them as function calls that return the tuple.
-# Consumers iterate over them, so a tuple is fine.
 
 def get_core_sensor_descriptions() -> tuple[AlphaESSModbusSensorDescription, ...]:
     """Return all Modbus sensor descriptions (exposed as entities)."""
-    return _get_core()
+    return CORE_SENSOR_DESCRIPTIONS
 
 
 def get_internal_register_descriptions() -> tuple[AlphaESSModbusSensorDescription, ...]:
     """Return internal register descriptions (read but not exposed)."""
-    return _get_internal()
+    return INTERNAL_REGISTER_DESCRIPTIONS
 
 
 def get_computed_sensor_descriptions() -> tuple[AlphaESSComputedSensorDescription, ...]:
-    """Return computed / template sensor descriptions."""
-    return _get_computed()
-
-
-# For backward compatibility, these module-level constants eagerly evaluate
-# on first import.  If you prefer lazy evaluation, use the get_*() functions.
-# We use a lazy pattern: the actual parsing happens on first access.
-
-class _LazyTuple:
-    """Descriptor that loads from YAML on first attribute access."""
-
-    def __init__(self, loader):
-        self._loader = loader
-        self._value = None
-
-    def __iter__(self):
-        if self._value is None:
-            self._value = self._loader()
-        return iter(self._value)
-
-    def __len__(self):
-        if self._value is None:
-            self._value = self._loader()
-        return len(self._value)
-
-    def __getitem__(self, idx):
-        if self._value is None:
-            self._value = self._loader()
-        return self._value[idx]
-
-    def __add__(self, other):
-        if self._value is None:
-            self._value = self._loader()
-        return self._value + (tuple(other) if not isinstance(other, tuple) else other)
-
-    def __radd__(self, other):
-        if self._value is None:
-            self._value = self._loader()
-        return (tuple(other) if not isinstance(other, tuple) else other) + self._value
-
-
-CORE_SENSOR_DESCRIPTIONS = _LazyTuple(_get_core)
-INTERNAL_REGISTER_DESCRIPTIONS = _LazyTuple(_get_internal)
-COMPUTED_SENSOR_DESCRIPTIONS = _LazyTuple(_get_computed)
+    """Return computed sensor descriptions."""
+    return COMPUTED_SENSOR_DESCRIPTIONS
 
 # ──────────── kW sensors for ApexCharts power diagrams ───────────────────
 # These convert core W-based sensors to kW for use in dashboard charts.

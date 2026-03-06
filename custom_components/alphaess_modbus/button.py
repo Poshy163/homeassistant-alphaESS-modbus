@@ -17,6 +17,7 @@ from .const import (
     REG_SYSTEM_TIME_MMSS,
     REG_SYSTEM_TIME_YYMM,
 )
+from .entity_definitions import BUTTON_DEFINITIONS, DISPATCH_SWITCH_KEYS
 from .entity import AlphaESSBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,9 +46,9 @@ class AlphaESSDispatchResetButton(AlphaESSBaseEntity, ButtonEntity):
     """Reset all dispatch registers to zero."""
 
     def __init__(self, coordinator, entry, hub) -> None:
-        super().__init__(coordinator, entry, "dispatch_reset_button")
+        super().__init__(coordinator, entry, BUTTON_DEFINITIONS[0].key)
         self._hub = hub
-        self._attr_name = "Helper Dispatch Reset"
+        self._attr_name = BUTTON_DEFINITIONS[0].name
 
     async def async_press(self) -> None:
         """Write zeros to dispatch registers."""
@@ -59,10 +60,10 @@ class AlphaESSDispatchResetFullButton(AlphaESSBaseEntity, ButtonEntity):
     """Reset dispatch registers and turn off all dispatch switches."""
 
     def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, "dispatch_reset_full_button")
+        super().__init__(coordinator, entry, BUTTON_DEFINITIONS[1].key)
         self._hub = hub
         self._runtime = runtime
-        self._attr_name = "Helper Dispatch Reset Full"
+        self._attr_name = BUTTON_DEFINITIONS[1].name
 
     async def async_press(self) -> None:
         """Write zeros to dispatch and turn off all dispatch switches."""
@@ -72,14 +73,7 @@ class AlphaESSDispatchResetFullButton(AlphaESSBaseEntity, ButtonEntity):
 
         # Look up switch entity IDs via the entity registry (multi-entry safe)
         registry = er.async_get(self.hass)
-        switch_keys = [
-            "force_charging_switch",
-            "force_discharging_switch",
-            "force_export_switch",
-            "dispatch_switch",
-            "excess_export_switch",
-        ]
-        for key in switch_keys:
+        for key in DISPATCH_SWITCH_KEYS:
             unique_id = f"{self._entry.entry_id}_{key}"
             entity_id = registry.async_get_entity_id("switch", DOMAIN, unique_id)
             if entity_id and self.hass.states.get(entity_id):
@@ -94,9 +88,9 @@ class AlphaESSSyncDateTimeButton(AlphaESSBaseEntity, ButtonEntity):
     """Synchronise inverter date/time with HA system time."""
 
     def __init__(self, coordinator, entry, hub) -> None:
-        super().__init__(coordinator, entry, "sync_datetime_button")
+        super().__init__(coordinator, entry, BUTTON_DEFINITIONS[2].key)
         self._hub = hub
-        self._attr_name = "Helper Synchronise Date & Time"
+        self._attr_name = BUTTON_DEFINITIONS[2].name
 
     async def async_press(self) -> None:
         """Write current date/time in BCD encoding to the inverter."""

@@ -9,35 +9,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    AC_LIMIT_OPTIONS,
-    DEFAULT_AC_LIMIT_KW,
     DOMAIN,
-    REG_TIME_PERIOD_CONTROL,
+)
+from .entity_definitions import (
+    AC_LIMIT_SELECT,
+    DISPATCH_MODE_SELECT,
+    TIME_PERIOD_CONTROL_SELECT,
 )
 from .entity import AlphaESSBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
-
-
-# ────────── Option maps ──────────────────────────────────────────────────
-
-TIME_PERIOD_CONTROL_OPTIONS: dict[str, int] = {
-    "Disable": 0,
-    "Enable Grid Charging Battery": 1,
-    "Enable Battery Discharge Time Control": 2,
-    "Enable Grid Charging Battery & Battery Discharge Time Control": 3,
-}
-
-DISPATCH_MODE_OPTIONS: dict[str, int] = {
-    "Battery only Charges from PV": 1,
-    "State of Charge Control": 2,
-    "Load Following": 3,
-    "Maximise Output": 4,
-    "Normal Mode": 5,
-    "Optimise Consumption": 6,
-    "Maximise Consumption": 7,
-    "No Battery Charge": 19,
-}
 
 
 # ────────── Platform setup ───────────────────────────────────────────────
@@ -67,13 +48,15 @@ async def async_setup_entry(
 class AlphaESSTimePeriodControlSelect(AlphaESSBaseEntity, SelectEntity):
     """Select that writes to the charging time period control register."""
 
-    _REVERSE_MAP: dict[int, str] = {v: k for k, v in TIME_PERIOD_CONTROL_OPTIONS.items()}
+    _REVERSE_MAP: dict[int, str] = {
+        v: k for k, v in TIME_PERIOD_CONTROL_SELECT.options.items()
+    }
 
     def __init__(self, coordinator, entry, hub) -> None:
-        super().__init__(coordinator, entry, "time_period_control_select")
+        super().__init__(coordinator, entry, TIME_PERIOD_CONTROL_SELECT.key)
         self._hub = hub
-        self._attr_name = "Helper Charging / Discharging Settings"
-        self._attr_options = list(TIME_PERIOD_CONTROL_OPTIONS.keys())
+        self._attr_name = TIME_PERIOD_CONTROL_SELECT.name
+        self._attr_options = list(TIME_PERIOD_CONTROL_SELECT.options.keys())
 
     @property
     def current_option(self) -> str | None:
@@ -85,8 +68,8 @@ class AlphaESSTimePeriodControlSelect(AlphaESSBaseEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Write to register."""
-        value = TIME_PERIOD_CONTROL_OPTIONS[option]
-        await self._hub.async_write_register(REG_TIME_PERIOD_CONTROL, value)
+        value = TIME_PERIOD_CONTROL_SELECT.options[option]
+        await self._hub.async_write_register(TIME_PERIOD_CONTROL_SELECT.register, value)
         await self.coordinator.async_request_refresh()
 
 
@@ -94,25 +77,34 @@ class AlphaESSDispatchModeSelect(AlphaESSBaseEntity, SelectEntity):
     """Select for dispatch mode (stored locally, used by dispatch switch)."""
 
     def __init__(self, coordinator, entry, runtime) -> None:
-        super().__init__(coordinator, entry, "dispatch_mode_select")
+        super().__init__(coordinator, entry, DISPATCH_MODE_SELECT.key)
         self._runtime = runtime
-        self._attr_name = "Helper Dispatch Mode"
-        self._attr_options = list(DISPATCH_MODE_OPTIONS.keys())
+        self._attr_name = DISPATCH_MODE_SELECT.name
+        self._attr_options = list(DISPATCH_MODE_SELECT.options.keys())
 
         # Initialise to default if not set
-        if "dispatch_mode" not in self._runtime.params:
-            self._runtime.params["dispatch_mode"] = 2  # SoC Control default
+        if DISPATCH_MODE_SELECT.param_key not in self._runtime.params:
+            self._runtime.params[DISPATCH_MODE_SELECT.param_key] = (
+                DISPATCH_MODE_SELECT.default_value
+            )
 
     @property
     def current_option(self) -> str | None:  # noqa: D401
         """Current dispatch mode."""
-        val = int(self._runtime.params.get("dispatch_mode", 2))
-        reverse = {v: k for k, v in DISPATCH_MODE_OPTIONS.items()}
+        val = int(
+            self._runtime.params.get(
+                DISPATCH_MODE_SELECT.param_key,
+                DISPATCH_MODE_SELECT.default_value,
+            )
+        )
+        reverse = {v: k for k, v in DISPATCH_MODE_SELECT.options.items()}
         return reverse.get(val)
 
     async def async_select_option(self, option: str) -> None:
         """Store dispatch mode locally."""
-        self._runtime.params["dispatch_mode"] = DISPATCH_MODE_OPTIONS[option]
+        self._runtime.params[DISPATCH_MODE_SELECT.param_key] = (
+            DISPATCH_MODE_SELECT.options[option]
+        )
         self.async_write_ha_state()
 
 
@@ -120,23 +112,25 @@ class AlphaESSInverterACLimitSelect(AlphaESSBaseEntity, SelectEntity):
     """Select for inverter AC limit (limits force power numbers)."""
 
     def __init__(self, coordinator, entry, runtime) -> None:
-        super().__init__(coordinator, entry, "inverter_ac_limit_select")
+        super().__init__(coordinator, entry, AC_LIMIT_SELECT.key)
         self._runtime = runtime
-        self._attr_name = "Helper Inverter AC Limit"
-        self._attr_options = [f"{v} kW" for v in AC_LIMIT_OPTIONS]
+        self._attr_name = AC_LIMIT_SELECT.name
+        self._attr_options = [f"{v} kW" for v in AC_LIMIT_SELECT.options_kw]
 
         # Initialise default
-        if "ac_limit_kw" not in self._runtime.params:
-            self._runtime.params["ac_limit_kw"] = float(DEFAULT_AC_LIMIT_KW)
+        if AC_LIMIT_SELECT.param_key not in self._runtime.params:
+            self._runtime.params[AC_LIMIT_SELECT.param_key] = float(
+                AC_LIMIT_SELECT.default_kw
+            )
 
     @property
     def current_option(self) -> str | None:  # noqa: D401
         """Current AC limit."""
-        val = self._runtime.params.get("ac_limit_kw")
+        val = self._runtime.params.get(AC_LIMIT_SELECT.param_key)
         if val is None:
             return None
         # Match the float to an option string
-        for opt in AC_LIMIT_OPTIONS:
+        for opt in AC_LIMIT_SELECT.options_kw:
             if float(opt) == float(val):
                 return f"{opt} kW"
         return None
@@ -145,5 +139,5 @@ class AlphaESSInverterACLimitSelect(AlphaESSBaseEntity, SelectEntity):
         """Store AC limit locally."""
         # Parse "5 kW" → 5.0
         kw_str = option.replace(" kW", "")
-        self._runtime.params["ac_limit_kw"] = float(kw_str)
+        self._runtime.params[AC_LIMIT_SELECT.param_key] = float(kw_str)
         self.async_write_ha_state()

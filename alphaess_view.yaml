@@ -3,7 +3,7 @@ views:
   # ── Home ──────────────────────────────────────────────────────
   - path: home
     title: Home
-    icon: mdi:domain
+    icon: mdi:home-battery
     theme: Fluent Blue
     subview: false
     type: sections
@@ -14,115 +14,59 @@ views:
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.portfolio_value_1020131
-        tap_action:
-          action: more-info
+        entity: sensor.alphaess_soc_battery
+        name: Battery SoC
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.financial_year_change_amount_1020131
-        color: ''
-        name: Financial Year Gain
-        show_entity_picture: false
+        entity: sensor.alphaess_current_pv_production
+        name: PV Production
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.al7011023030623_instantaneous_battery_soc
-        show_entity_picture: false
-        name: Battery Charge
+        entity: sensor.alphaess_current_house_load
+        name: House Load
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.financial_year_change_percent_1020131
-        name: Financial Year Gain Percent
+        entity: sensor.alphaess_power_grid
+        name: Grid Power
     sections:
       - type: grid
         cards:
-          - type: vertical-stack
-            cards:
-              - type: custom:mushroom-person-card
-                entity: person.joshua_leaper
-                icon_type: entity-picture
-                name: Joshua
-          - type: vertical-stack
-            cards:
-              - type: custom:mushroom-light-card
-                entity: light.bedroom_lights
-                fill_container: true
-                use_light_color: true
-                show_brightness_control: true
-                show_color_control: true
-                name: Bedroom Roof
-              - type: custom:mushroom-entity-card
-                entity: switch.floodlight
-                name: Outside Floodlight
-                icon: mdi:lightbulb
-          - type: vertical-stack
-            cards:
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.eve_motion_bedroom_occupancy
-                name: Bedroom Motion
-                icon_color: accent
-                fill_container: true
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.eve_motion_outside_occupancy
-                name: Pagola Motion
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.eve_motion_garage_occupancy
-                name: Garage Motion
-      - type: grid
-        cards:
-          - type: vertical-stack
-            cards:
-              - type: custom:mushroom-entity-card
-                entity: sensor.al7011023030623_instantaneous_battery_soc
-                name: Battery Charge
-                fill_container: false
-                primary_info: name
-              - type: custom:mushroom-entity-card
-                entity: sensor.al7011023030623_instantaneous_grid_i_o_total
-                name: Grid Usage
-                fill_container: false
           - type: entities
             entities:
-              - entity: sensor.portfolio_value_1020131
-              - entity: sensor.total_gain_1020131
-              - entity: sensor.total_gain_percent_1020131
-            title: 'Sharesight Portfolio '
-          - type: media-control
-            entity: media_player.spotify_joshua_leaper
-      - type: grid
-        cards:
-          - type: vertical-stack
-            cards:
-              - show_current: true
-                show_forecast: true
-                type: weather-forecast
-                entity: weather.home
-                forecast_type: daily
-                name: Wynn Vale
-              - type: custom:bom-radar-card
-                data_source: RainViewer-TWC
-                map_style: Light
-                zoom_level: 8
-                show_recenter: false
-                square_map: false
-                marker_latitude: -34.7971775
-                marker_longitude: 138.6994403
-                center_latitude: -34.9285245
-                center_longitude: 138.5995142
-                show_radar_location: true
-                show_radar_coverage: false
-                extra_labels: false
-                show_range: true
-                show_playback: true
-                show_zoom: true
-                static_map: false
-                show_marker: true
-                show_scale: true
+              - entity: sensor.alphaess_soc_battery
+                name: Battery SoC
+              - entity: sensor.alphaess_power_battery
+                name: Battery Power
+              - entity: sensor.alphaess_current_pv_production
+                name: PV Production
+              - entity: sensor.alphaess_current_house_load
+                name: House Load
+              - entity: sensor.alphaess_power_grid
+                name: Grid Power
+              - entity: sensor.alphaess_excess_power
+                name: Excess Power
+            title: AlphaESS Live
+          - type: entities
+            entities:
+              - entity: sensor.alphaess_total_energy_from_pv
+                name: Total Energy from PV
+              - entity: sensor.alphaess_total_energy_consumption_from_grid_meter
+                name: Total Grid Consumption
+              - entity: sensor.alphaess_total_energy_feed_to_grid_meter
+                name: Total Grid Feed-in
+              - entity: sensor.alphaess_total_house_load
+                name: Total House Load
+              - entity: sensor.alphaess_total_energy_charge_battery
+                name: Total Battery Charge
+              - entity: sensor.alphaess_total_energy_discharge_battery
+                name: Total Battery Discharge
+            title: AlphaESS Totals
 
   # ── Charging ──────────────────────────────────────────────────
   - path: charging

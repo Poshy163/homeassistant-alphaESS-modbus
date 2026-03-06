@@ -12,20 +12,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     DISPATCH_RESET_PAYLOAD,
     DOMAIN,
-    PARAM_DISPATCH_CUTOFF_SOC,
-    PARAM_DISPATCH_DURATION,
-    PARAM_DISPATCH_POWER,
-    PARAM_FORCE_CHARGE_CUTOFF_SOC,
-    PARAM_FORCE_CHARGE_DURATION,
-    PARAM_FORCE_CHARGE_POWER,
-    PARAM_FORCE_DISCHARGE_CUTOFF_SOC,
-    PARAM_FORCE_DISCHARGE_DURATION,
-    PARAM_FORCE_DISCHARGE_POWER,
-    PARAM_FORCE_EXPORT_CUTOFF_SOC,
-    PARAM_FORCE_EXPORT_DURATION,
-    PARAM_FORCE_EXPORT_POWER,
     REG_DISPATCH_START,
     pack_dispatch_payload,
+)
+from .entity_definitions import (
+    DISPATCH_SWITCH_DEFINITIONS,
+    DispatchSwitchDefinition,
+    EXCESS_EXPORT_PAUSE_SWITCH,
 )
 from .entity import AlphaESSBaseEntity
 
@@ -46,11 +39,8 @@ async def async_setup_entry(
     hub = runtime.hub
 
     switches: list[_AlphaESSDispatchSwitch] = [
-        AlphaESSForceChargeSwitch(coordinator, entry, hub, runtime),
-        AlphaESSForceDischargeSwitch(coordinator, entry, hub, runtime),
-        AlphaESSForceExportSwitch(coordinator, entry, hub, runtime),
-        AlphaESSDispatchSwitch(coordinator, entry, hub, runtime),
-        AlphaESSExcessExportSwitch(coordinator, entry, hub, runtime),
+        AlphaESSDispatchProfileSwitch(coordinator, entry, hub, runtime, desc)
+        for desc in DISPATCH_SWITCH_DEFINITIONS
     ]
 
     # Register mutual-exclusion group
@@ -59,7 +49,7 @@ async def async_setup_entry(
 
     # Simple toggle switches (not part of mutual-exclusion group)
     extra: list[SwitchEntity] = [
-        AlphaESSExcessExportPauseSwitch(coordinator, entry, runtime),
+        AlphaESSToggleSwitch(coordinator, entry, runtime, EXCESS_EXPORT_PAUSE_SWITCH),
     ]
 
     async_add_entities([*switches, *extra])
@@ -106,131 +96,54 @@ class _AlphaESSDispatchSwitch(AlphaESSBaseEntity, SwitchEntity):
         await self.coordinator.async_request_refresh()
 
 
-# ──────────────── Force Charging ─────────────────────────────────────────
+class AlphaESSDispatchProfileSwitch(_AlphaESSDispatchSwitch):
+    """Dispatch switch driven by a shared profile definition."""
 
-
-class AlphaESSForceChargeSwitch(_AlphaESSDispatchSwitch):
-    """Force the inverter to charge from grid."""
-
-    def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, hub, runtime, "force_charging_switch", "Helper Force Charging")
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        params = self._runtime.params
-        power_kw = abs(float(params.get(PARAM_FORCE_CHARGE_POWER, 5.0)))
-        duration = float(params.get(PARAM_FORCE_CHARGE_DURATION, 120))
-        cutoff = float(params.get(PARAM_FORCE_CHARGE_CUTOFF_SOC, 100))
-
-        await self._dispatch_reset()
-        await self._turn_off_others()
-        vals = pack_dispatch_payload(mode=2, power_kw=-power_kw, duration_min=duration, cutoff_soc=cutoff)
-        await self._hub.async_write_registers(REG_DISPATCH_START, vals)
-        self._is_on = True
-        self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
-
-
-# ──────────────── Force Discharging ──────────────────────────────────────
-
-
-class AlphaESSForceDischargeSwitch(_AlphaESSDispatchSwitch):
-    """Force the inverter to discharge battery."""
-
-    def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, hub, runtime, "force_discharging_switch", "Helper Force Discharging")
+    def __init__(
+        self,
+        coordinator,
+        entry,
+        hub,
+        runtime,
+        description: DispatchSwitchDefinition,
+    ) -> None:
+        super().__init__(coordinator, entry, hub, runtime, description.key, description.name)
+        self._desc = description
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         params = self._runtime.params
-        power_kw = abs(float(params.get(PARAM_FORCE_DISCHARGE_POWER, 5.0)))
-        duration = float(params.get(PARAM_FORCE_DISCHARGE_DURATION, 120))
-        cutoff = float(params.get(PARAM_FORCE_DISCHARGE_CUTOFF_SOC, 10))
+        cutoff = float(params.get(self._desc.cutoff_param, 100))
 
-        await self._dispatch_reset()
-        await self._turn_off_others()
-        vals = pack_dispatch_payload(mode=2, power_kw=power_kw, duration_min=duration, cutoff_soc=cutoff)
-        await self._hub.async_write_registers(REG_DISPATCH_START, vals)
-        self._is_on = True
-        self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
+        if self._desc.use_excess_power:
+            ac_limit_kw = float(params.get("ac_limit_kw", 5.0))
+            data = self.coordinator.data or {}
+            pv_prod = float(data.get("current_pv_production", 0) or 0)
+            house_load = float(data.get("current_house_load", 0) or 0)
+            excess_w = max(0, pv_prod - house_load)
+            power_kw = min(excess_w / 1000.0, ac_limit_kw)
+            duration = 480.0
+        else:
+            power_kw = float(params.get(self._desc.power_param, 0))
+            duration = float(params.get(self._desc.duration_param, 120))
 
+        if self._desc.power_abs:
+            power_kw = abs(power_kw)
+        if self._desc.negate_power:
+            power_kw = -power_kw
 
-# ──────────────── Force Export ────────────────────────────────────────────
-
-
-class AlphaESSForceExportSwitch(_AlphaESSDispatchSwitch):
-    """Force the inverter to export power to grid."""
-
-    def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, hub, runtime, "force_export_switch", "Helper Force Export")
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        params = self._runtime.params
-        power_kw = abs(float(params.get(PARAM_FORCE_EXPORT_POWER, 5.0)))
-        duration = float(params.get(PARAM_FORCE_EXPORT_DURATION, 120))
-        cutoff = float(params.get(PARAM_FORCE_EXPORT_CUTOFF_SOC, 4))
-
-        # Export = positive dispatch power (discharging to grid)
-        await self._dispatch_reset()
-        await self._turn_off_others()
-        vals = pack_dispatch_payload(mode=2, power_kw=power_kw, duration_min=duration, cutoff_soc=cutoff)
-        await self._hub.async_write_registers(REG_DISPATCH_START, vals)
-        self._is_on = True
-        self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
-
-
-# ──────────────── Dispatch (custom mode) ─────────────────────────────────
-
-
-class AlphaESSDispatchSwitch(_AlphaESSDispatchSwitch):
-    """Dispatch with user-selected mode and parameters."""
-
-    def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, hub, runtime, "dispatch_switch", "Helper Dispatch")
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        params = self._runtime.params
-        mode = int(params.get("dispatch_mode", 2))
-        power_kw = float(params.get(PARAM_DISPATCH_POWER, 0))
-        duration = float(params.get(PARAM_DISPATCH_DURATION, 120))
-        cutoff = float(params.get(PARAM_DISPATCH_CUTOFF_SOC, 100))
-
-        await self._dispatch_reset()
-        await self._turn_off_others()
-        vals = pack_dispatch_payload(mode=mode, power_kw=power_kw, duration_min=duration, cutoff_soc=cutoff)
-        await self._hub.async_write_registers(REG_DISPATCH_START, vals)
-        self._is_on = True
-        self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
-
-
-# ──────────────── Excess Export ───────────────────────────────────────────
-
-
-class AlphaESSExcessExportSwitch(_AlphaESSDispatchSwitch):
-    """Dispatch excess PV power (above house load) to the grid."""
-
-    def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, hub, runtime, "excess_export_switch", "Helper Excess Export")
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        params = self._runtime.params
-        cutoff = float(params.get(PARAM_FORCE_EXPORT_CUTOFF_SOC, 4))
-        ac_limit_kw = float(params.get("ac_limit_kw", 5.0))
-
-        # Compute excess power from coordinator
-        data = self.coordinator.data or {}
-        pv_prod = float(data.get("current_pv_production", 0) or 0)
-        house_load = float(data.get("current_house_load", 0) or 0)
-        excess_w = max(0, pv_prod - house_load)
-        excess_kw = min(excess_w / 1000.0, ac_limit_kw)
+        mode = self._desc.mode
+        if self._desc.use_dispatch_mode_from_runtime:
+            mode = int(params.get("dispatch_mode", self._desc.mode))
 
         await self._dispatch_reset()
         await self._turn_off_others()
 
-        if excess_kw > 0:
+        if (not self._desc.use_excess_power) or power_kw > 0:
             vals = pack_dispatch_payload(
-                mode=2, power_kw=excess_kw, duration_min=480, cutoff_soc=cutoff
+                mode=mode,
+                power_kw=power_kw,
+                duration_min=duration,
+                cutoff_soc=cutoff,
             )
             await self._hub.async_write_registers(REG_DISPATCH_START, vals)
 
@@ -239,16 +152,13 @@ class AlphaESSExcessExportSwitch(_AlphaESSDispatchSwitch):
         await self.coordinator.async_request_refresh()
 
 
-# ──────────────── Excess Export Pause ─────────────────────────────────────
+class AlphaESSToggleSwitch(AlphaESSBaseEntity, SwitchEntity):
+    """Simple local toggle switch entity."""
 
-
-class AlphaESSExcessExportPauseSwitch(AlphaESSBaseEntity, SwitchEntity):
-    """Simple toggle used by automations to pause excess export."""
-
-    def __init__(self, coordinator, entry, runtime) -> None:
-        super().__init__(coordinator, entry, "excess_export_pause_switch")
+    def __init__(self, coordinator, entry, runtime, description) -> None:
+        super().__init__(coordinator, entry, description.key)
         self._runtime = runtime
-        self._attr_name = "Helper Excess Export Pause"
+        self._attr_name = description.name
         self._is_on = False
 
     @property
