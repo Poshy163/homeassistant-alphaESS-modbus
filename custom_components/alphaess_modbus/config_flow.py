@@ -17,6 +17,7 @@ from .const import (
     DEFAULT_SLAVE_ID,
     DOMAIN,
     INVERTER_MODELS,
+    build_entry_unique_id,
 )
 
 DEFAULT_NAME = "AlphaESS"
@@ -29,7 +30,10 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            unique = f"tcp-{user_input.get(CONF_HOST, 'unknown')}"
+            host = str(user_input.get(CONF_HOST, "") or "")
+            port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
+            slave_id = int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
+            unique = build_entry_unique_id(host, port, slave_id)
             await self.async_set_unique_id(unique)
             self._abort_if_unique_id_configured()
 

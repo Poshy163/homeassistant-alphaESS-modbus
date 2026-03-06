@@ -42,6 +42,12 @@ FAST_POLL_1S_KEYS: set[str] = {
     "pv4_power",
 }
 
+
+def build_entry_unique_id(host: str, port: int, slave_id: int) -> str:
+    """Build a stable unique_id for a Modbus device endpoint."""
+    normalized_host = host.strip().lower()
+    return f"tcp-{normalized_host}:{port}-slave-{slave_id}"
+
 # SMILE-B3/B3-PLUS report these power values in 10x compared to newer models.
 # Axel's YAML required manual scale edits for these fields; we normalize here.
 B3_POWER_SCALE_CORRECTION = 0.1

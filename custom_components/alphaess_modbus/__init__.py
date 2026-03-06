@@ -9,12 +9,19 @@ from pathlib import Path
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DEFAULT_PARAMS, DOMAIN
+from .const import (
+    CONF_SLAVE_ID,
+    DEFAULT_PARAMS,
+    DEFAULT_PORT,
+    DEFAULT_SLAVE_ID,
+    DOMAIN,
+    build_entry_unique_id,
+)
 from .coordinator import AlphaESSModbusCoordinator
 from .hub import AlphaESSModbusHub
 from .services import async_register_services
@@ -67,6 +74,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _async_register_custom_cards(hass)
 
+    if not await _async_migrate_entry_unique_id(hass, entry):
+        return False
+
     hub = AlphaESSModbusHub(hass, entry)
     coordinator = AlphaESSModbusCoordinator(hass, hub)
 
@@ -94,7 +104,38 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    await _async_migrate_entry_unique_id(hass, entry)
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def _async_migrate_entry_unique_id(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Ensure config entry unique_id follows tcp-<host>:<port>-slave-<id>."""
+    merged = {**entry.data, **entry.options}
+    host = str(merged.get(CONF_HOST, "") or "")
+    port = int(merged.get(CONF_PORT, DEFAULT_PORT))
+    slave_id = int(merged.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
+    expected_unique_id = build_entry_unique_id(host, port, slave_id)
+
+    if entry.unique_id == expected_unique_id:
+        return True
+
+    for other_entry in hass.config_entries.async_entries(DOMAIN):
+        if other_entry.entry_id != entry.entry_id and other_entry.unique_id == expected_unique_id:
+            _LOGGER.error(
+                "Cannot migrate unique_id for entry %s to %s because it is already used by entry %s",
+                entry.entry_id,
+                expected_unique_id,
+                other_entry.entry_id,
+            )
+            return False
+
+    hass.config_entries.async_update_entry(entry, unique_id=expected_unique_id)
+    _LOGGER.info(
+        "Updated AlphaESS config entry unique_id for %s to %s",
+        entry.entry_id,
+        expected_unique_id,
+    )
+    return True
 
 
 async def _async_register_custom_cards(hass: HomeAssistant) -> None:
