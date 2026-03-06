@@ -376,7 +376,7 @@ class AlphaESSComputedSensorDescription:
 
 # ───────────────────── Sensor descriptions (static registry) ─────────────
 
-from .sensor_registry import (
+from .sensor_registry import (  # noqa: E402
     COMPUTED_SENSOR_DEFINITIONS,
     CORE_SENSOR_DEFINITIONS,
     INTERNAL_REGISTER_DEFINITIONS,
