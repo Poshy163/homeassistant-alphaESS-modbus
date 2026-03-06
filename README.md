@@ -32,13 +32,13 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 5. Restart Home Assistant.
 6. Add integration from **Settings -> Devices & Services**.
 
-## Manual Install (Drag and Drop)
+## Manual Update From GitHub Release Zip
 
-1. Download or clone this repository.
-2. Copy the folder `custom_components/alphaess_modbus` into your Home Assistant config directory under `custom_components/`.
-3. Final path must be `config/custom_components/alphaess_modbus`.
-4. Restart Home Assistant.
-5. Add integration from **Settings -> Devices & Services**.
+1. Open the latest GitHub release for this repository.
+2. Download the asset named `alphaess_modbus-<tag>.zip`.
+3. Extract the zip and copy the extracted `alphaess_modbus` folder into `config/custom_components/`.
+4. Replace the existing `config/custom_components/alphaess_modbus` folder when prompted.
+5. Restart Home Assistant to load the updated integration.
 
 ## Migration Notes
 
