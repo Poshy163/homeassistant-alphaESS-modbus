@@ -7,6 +7,12 @@ from enum import StrEnum
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import UnitOfPower
 
+from .sensor_registry import (
+    COMPUTED_SENSOR_DEFINITIONS,
+    CORE_SENSOR_DEFINITIONS,
+    INTERNAL_REGISTER_DEFINITIONS,
+)
+
 # ───────────────────────── Domain & integration ──────────────────────────
 
 DOMAIN = "alphaess_modbus"
@@ -335,12 +341,6 @@ class AlphaESSComputedSensorDescription:
 
 
 # ───────────────────── Sensor descriptions (static registry) ─────────────
-
-from .sensor_registry import (
-    COMPUTED_SENSOR_DEFINITIONS,
-    CORE_SENSOR_DEFINITIONS,
-    INTERNAL_REGISTER_DEFINITIONS,
-)
 
 CORE_SENSOR_DESCRIPTIONS = CORE_SENSOR_DEFINITIONS
 INTERNAL_REGISTER_DESCRIPTIONS = INTERNAL_REGISTER_DEFINITIONS
