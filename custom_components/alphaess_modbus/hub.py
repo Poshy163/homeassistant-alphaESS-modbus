@@ -36,6 +36,10 @@ class AlphaESSModbusHub:
         data = getattr(self._entry, "data", None) or {}
         return opts.get(key, data.get(key, default))
 
+    def get_config_value(self, key: str, default=None):
+        """Return a merged config value for other integration components."""
+        return self._cfg(key, default)
+
     # ---- connection lifecycle ----
 
     async def async_connect(self) -> bool:

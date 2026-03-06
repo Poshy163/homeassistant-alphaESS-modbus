@@ -11,12 +11,15 @@ from .const import (
     AC_LIMIT_OPTIONS,
     CONF_AC_LIMIT_KW,
     CONF_MODEL,
+    CONF_POLL_FREQ,
     CONF_SLAVE_ID,
     DEFAULT_AC_LIMIT_KW,
+    DEFAULT_POLL_FREQ,
     DEFAULT_PORT,
     DEFAULT_SLAVE_ID,
     DOMAIN,
     INVERTER_MODELS,
+    POLL_FREQUENCY_OPTIONS,
 )
 
 DEFAULT_NAME = "AlphaESS"
@@ -57,6 +60,10 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
                 vol.Required(CONF_MODEL): vol.In(INVERTER_MODELS),
                 vol.Required(
+                    CONF_POLL_FREQ,
+                    default=DEFAULT_POLL_FREQ,
+                ): vol.In(POLL_FREQUENCY_OPTIONS),
+                vol.Required(
                     CONF_AC_LIMIT_KW,
                     default=DEFAULT_AC_LIMIT_KW,
                 ): vol.In(AC_LIMIT_OPTIONS),
@@ -73,6 +80,10 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_PORT, default=merged.get(CONF_PORT, DEFAULT_PORT)): int,
                 vol.Required(CONF_SLAVE_ID, default=merged.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)): int,
                 vol.Required(CONF_MODEL, default=merged.get(CONF_MODEL)): vol.In(INVERTER_MODELS),
+                vol.Required(
+                    CONF_POLL_FREQ,
+                    default=merged.get(CONF_POLL_FREQ, DEFAULT_POLL_FREQ),
+                ): vol.In(POLL_FREQUENCY_OPTIONS),
                 vol.Required(
                     CONF_AC_LIMIT_KW,
                     default=merged.get(CONF_AC_LIMIT_KW, DEFAULT_AC_LIMIT_KW),

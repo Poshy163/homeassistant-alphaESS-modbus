@@ -7,12 +7,6 @@ from enum import StrEnum
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import UnitOfPower
 
-from .sensor_registry import (
-    COMPUTED_SENSOR_DEFINITIONS,
-    CORE_SENSOR_DEFINITIONS,
-    INTERNAL_REGISTER_DEFINITIONS,
-)
-
 # ───────────────────────── Domain & integration ──────────────────────────
 
 DOMAIN = "alphaess_modbus"
@@ -20,11 +14,39 @@ DOMAIN = "alphaess_modbus"
 CONF_MODEL = "model"
 CONF_AC_LIMIT_KW = "ac_limit_kw"
 CONF_SLAVE_ID = "slave_id"
+CONF_POLL_FREQ = "poll_freq"
 
 DEFAULT_PORT = 502
 DEFAULT_SLAVE_ID = 85
 DEFAULT_AC_LIMIT_KW = "5"
 DEFAULT_SCAN_INTERVAL_SECONDS = 5
+DEFAULT_POLL_FREQ = "medium"
+
+POLL_FREQUENCY_OPTIONS = ["slow", "medium", "fast"]
+POLL_FREQUENCY_INTERVAL_SECONDS: dict[str, int] = {
+    "slow": 10,
+    "medium": DEFAULT_SCAN_INTERVAL_SECONDS,
+    "fast": 1,
+}
+SLOW_POLL_TARGET_SECONDS = 60
+
+# SMILE-B3/B3-PLUS report these power values in 10x compared to newer models.
+# Axel's YAML required manual scale edits for these fields; we normalize here.
+B3_POWER_SCALE_CORRECTION = 0.1
+B3_POWER_KEYS: set[str] = {
+    "power_phase_a_grid",
+    "power_phase_b_grid",
+    "power_phase_c_grid",
+    "power_grid",
+    "power_inverter_l1",
+    "power_inverter_l2",
+    "power_inverter_l3",
+    "power_inverter",
+    "backup_power_inverter_l1",
+    "backup_power_inverter_l2",
+    "backup_power_inverter_l3",
+    "backup_power_inverter",
+}
 
 PLATFORMS = ["sensor", "number", "select", "switch", "button", "time"]
 
@@ -341,6 +363,12 @@ class AlphaESSComputedSensorDescription:
 
 
 # ───────────────────── Sensor descriptions (static registry) ─────────────
+
+from .sensor_registry import (
+    COMPUTED_SENSOR_DEFINITIONS,
+    CORE_SENSOR_DEFINITIONS,
+    INTERNAL_REGISTER_DEFINITIONS,
+)
 
 CORE_SENSOR_DESCRIPTIONS = CORE_SENSOR_DEFINITIONS
 INTERNAL_REGISTER_DESCRIPTIONS = INTERNAL_REGISTER_DEFINITIONS

@@ -16,7 +16,9 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 - UI-based setup with config flow and options flow
 - 140+ Modbus-backed sensor entities plus computed entities
 - Number/select/switch/button/time helper entities for dispatch and schedule control
-- 5-second coordinator polling with slower diagnostic polling for selected registers
+- Configurable polling profile (`slow`/`medium`/`fast`) for RS485 and TCP users
+- Automatic slower diagnostic polling cadence based on selected polling profile
+- Built-in SMILE-B3/B3-PLUS normalization for 12 legacy power sensors
 - Local services for dispatch, reset, date/time sync, and period writes
 - Optional package extras for utility-meter and legacy dashboard compatibility entities
 
@@ -29,6 +31,14 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 4. Select type **Integration** and install **AlphaESS Modbus**.
 5. Restart Home Assistant.
 6. Add integration from **Settings -> Devices & Services**.
+
+## Manual Install (Drag and Drop)
+
+1. Download or clone this repository.
+2. Copy the folder `custom_components/alphaess_modbus` into your Home Assistant config directory under `custom_components/`.
+3. Final path must be `config/custom_components/alphaess_modbus`.
+4. Restart Home Assistant.
+5. Add integration from **Settings -> Devices & Services**.
 
 ## Migration Notes
 

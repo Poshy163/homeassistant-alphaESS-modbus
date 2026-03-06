@@ -9,7 +9,11 @@
           "port": "Port",
           "slave_id": "Slave ID",
           "model": "Inverter model",
+          "poll_freq": "Polling frequency",
           "ac_limit_kw": "Inverter AC limit (kW)"
+        },
+        "data_description": {
+          "poll_freq": "Fast = 1s (high load), Medium = 5s (default), Slow = 10s (recommended for RS485 converters)"
         }
       }
     },
@@ -32,8 +36,21 @@
           "port": "Port",
           "slave_id": "Slave ID",
           "model": "Inverter model",
+          "poll_freq": "Polling frequency",
           "ac_limit_kw": "Inverter AC limit (kW)"
+        },
+        "data_description": {
+          "poll_freq": "Fast = 1s (high load), Medium = 5s (default), Slow = 10s (recommended for RS485 converters)"
         }
+      }
+    }
+  },
+  "selector": {
+    "poll_freq": {
+      "options": {
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast"
       }
     }
   }

@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
+    Platform.SENSOR, 
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SWITCH,
@@ -162,7 +162,8 @@ async def _async_register_custom_cards(hass: HomeAssistant) -> None:
             if js_url in registered_js_urls:
                 continue
             try:
-                add_extra_js_url(hass, js_url)
+                if add_extra_js_url is not None:
+                    add_extra_js_url(hass, js_url)
                 registered_js_urls.add(js_url)
             except Exception:
                 _LOGGER.exception("Failed to add AlphaESS card JS URL: %s", js_url)

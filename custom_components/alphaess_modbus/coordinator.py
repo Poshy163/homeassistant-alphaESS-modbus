@@ -8,11 +8,17 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
+    B3_POWER_KEYS,
+    B3_POWER_SCALE_CORRECTION,
+    CONF_MODEL,
+    CONF_POLL_FREQ,
     CORE_SENSOR_DESCRIPTIONS,
-    INTERNAL_REGISTER_DESCRIPTIONS,
-    DEFAULT_SCAN_INTERVAL_SECONDS,
+    DEFAULT_POLL_FREQ,
     DOMAIN,
+    INTERNAL_REGISTER_DESCRIPTIONS,
+    POLL_FREQUENCY_INTERVAL_SECONDS,
     RegisterType,
+    SLOW_POLL_TARGET_SECONDS,
 )
 from .hub import AlphaESSModbusHub
 
@@ -71,25 +77,49 @@ def _decode_bcd_datetime(
 class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | None]]):
     """Polls all Modbus registers and computes derived values."""
 
-    # Grid Safety registers are polled every SLOW_POLL_EVERY cycles (~60s at 5s interval)
-    SLOW_POLL_EVERY = 12
-
     def __init__(self, hass: HomeAssistant, hub: AlphaESSModbusHub) -> None:
+        self.hub = hub
+        poll_freq = str(hub.get_config_value(CONF_POLL_FREQ, DEFAULT_POLL_FREQ) or DEFAULT_POLL_FREQ)
+
+        # Backward compatibility for older entries: assume B3/B3-PLUS users are on slower links.
+        model = str(hub.get_config_value(CONF_MODEL, "") or "")
+        if poll_freq not in POLL_FREQUENCY_INTERVAL_SECONDS:
+            poll_freq = "slow" if model in ("SMILE-B3", "SMILE-B3-PLUS") else DEFAULT_POLL_FREQ
+
+        interval_seconds = POLL_FREQUENCY_INTERVAL_SECONDS[poll_freq]
+        slow_poll_every = max(1, round(SLOW_POLL_TARGET_SECONDS / interval_seconds))
+
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL_SECONDS),
+            update_interval=timedelta(seconds=interval_seconds),
         )
-        self.hub = hub
+        self._model = model
+        self._poll_freq = poll_freq
+        self._slow_poll_every = slow_poll_every
         self._poll_cycle: int = 0
+
+        _LOGGER.debug(
+            "AlphaESS polling profile selected: poll_freq=%s interval=%ss slow_poll_every=%s model=%s",
+            self._poll_freq,
+            interval_seconds,
+            self._slow_poll_every,
+            self._model,
+        )
+
+    def _apply_model_adjustment(self, key: str, value: float) -> float:
+        """Apply model-specific scaling corrections where required."""
+        if self._model in ("SMILE-B3", "SMILE-B3-PLUS") and key in B3_POWER_KEYS:
+            return value * B3_POWER_SCALE_CORRECTION
+        return value
 
     async def _async_update_data(self) -> dict[str, float | str | None]:
         """Read Modbus registers and compute derived values."""
         data: dict[str, float | str | None] = {}
 
         self._poll_cycle += 1
-        is_slow_cycle = (self._poll_cycle % self.SLOW_POLL_EVERY) == 0
+        is_slow_cycle = (self._poll_cycle % self._slow_poll_every) == 0
 
         # ── Read raw Modbus registers ────────────────────────────────
         for desc in (*CORE_SENSOR_DESCRIPTIONS, *INTERNAL_REGISTER_DESCRIPTIONS):
@@ -128,6 +158,7 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
 
             # Apply scale and offset
             value = raw * desc.scale + desc.offset
+            value = self._apply_model_adjustment(desc.key, value)
             if desc.precision is not None:
                 value = round(value, desc.precision)
             data[desc.key] = value
