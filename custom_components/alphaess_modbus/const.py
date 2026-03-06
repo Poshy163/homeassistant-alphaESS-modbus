@@ -30,6 +30,18 @@ POLL_FREQUENCY_INTERVAL_SECONDS: dict[str, int] = {
 }
 SLOW_POLL_TARGET_SECONDS = 60
 
+# Axel's original 1-second set. When using fast polling, only these keys are read
+# every second; other non-slow sensors are read on a 5-second cadence.
+FAST_POLL_1S_KEYS: set[str] = {
+    "power_grid",
+    "power_battery",
+    "active_power_pv_meter",
+    "pv1_power",
+    "pv2_power",
+    "pv3_power",
+    "pv4_power",
+}
+
 # SMILE-B3/B3-PLUS report these power values in 10x compared to newer models.
 # Axel's YAML required manual scale edits for these fields; we normalize here.
 B3_POWER_SCALE_CORRECTION = 0.1

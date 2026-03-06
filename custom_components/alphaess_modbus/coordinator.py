@@ -15,6 +15,7 @@ from .const import (
     CORE_SENSOR_DESCRIPTIONS,
     DEFAULT_POLL_FREQ,
     DOMAIN,
+    FAST_POLL_1S_KEYS,
     INTERNAL_REGISTER_DESCRIPTIONS,
     POLL_FREQUENCY_INTERVAL_SECONDS,
     RegisterType,
@@ -88,6 +89,9 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
 
         interval_seconds = POLL_FREQUENCY_INTERVAL_SECONDS[poll_freq]
         slow_poll_every = max(1, round(SLOW_POLL_TARGET_SECONDS / interval_seconds))
+        # In fast mode (1s coordinator), only the explicit power sensors are read
+        # every second. All other regular sensors are throttled to every 5 cycles.
+        regular_poll_every = max(1, round(5 / interval_seconds)) if poll_freq == "fast" else 1
 
         super().__init__(
             hass,
@@ -98,6 +102,7 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
         self._model = model
         self._poll_freq = poll_freq
         self._slow_poll_every = slow_poll_every
+        self._regular_poll_every = regular_poll_every
         self._poll_cycle: int = 0
 
         _LOGGER.debug(
@@ -122,12 +127,25 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
         # First refresh reads all sensors so entities are immediately available.
         is_first_refresh = self._poll_cycle == 1
         is_slow_cycle = is_first_refresh or ((self._poll_cycle % self._slow_poll_every) == 0)
+        is_regular_cycle = is_first_refresh or ((self._poll_cycle % self._regular_poll_every) == 0)
 
         # ── Read raw Modbus registers ────────────────────────────────
         for desc in (*CORE_SENSOR_DESCRIPTIONS, *INTERNAL_REGISTER_DESCRIPTIONS):
             # Skip slow-poll sensors unless this is a slow cycle
             if desc.slow_poll and not is_slow_cycle:
                 # Preserve last known value from coordinator data
+                if self.data and desc.key in self.data:
+                    data[desc.key] = self.data[desc.key]
+                else:
+                    data[desc.key] = None
+                continue
+
+            if (
+                self._poll_freq == "fast"
+                and desc.key not in FAST_POLL_1S_KEYS
+                and not is_regular_cycle
+            ):
+                # In fast mode, only whitelist keys update every cycle.
                 if self.data and desc.key in self.data:
                     data[desc.key] = self.data[desc.key]
                 else:
