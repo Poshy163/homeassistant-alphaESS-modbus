@@ -30,15 +30,6 @@ AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HA
 5. Restart Home Assistant.
 6. Add integration from **Settings -> Devices & Services**.
 
-## Architecture
-
-The integration is self-contained and no longer parses runtime YAML definitions.
-
-- `custom_components/alphaess_modbus/sensor_registry.py` is the static source for Modbus and computed sensor metadata.
-- `custom_components/alphaess_modbus/entity_definitions.py` contains shared platform metadata for number/select/switch/button/time/binary entities.
-- `custom_components/alphaess_modbus/coordinator.py` polls registers and computes derived values.
-- `custom_components/alphaess_modbus/services.py` implements control services used by entities.
-
 ## Migration Notes
 
 If you used package-era setups from `projects.hillviewlodge.ie`:
@@ -71,23 +62,19 @@ homeassistant:
 
 ## Dashboard YAML
 
-Two ready-to-use dashboard files are included:
+One ready-to-use dashboard file is included:
 
 - `alphaess_view.yaml`: full dashboard config (contains `title` + `views`)
-- `alphaess_view_single.yaml`: single view config (`type: sections`) for view-level raw editor
 
-Use the correct file for the editor you are pasting into:
-
-- Dashboard-level raw config editor: paste `alphaess_view.yaml`
-- View-level raw config editor: paste `alphaess_view_single.yaml`
+Paste it into the dashboard-level raw config editor.
 
 Both files are already aligned to integration-native entities (`switch`/`number`/`select`/`time`/`button`) and do not require legacy `input_*` helpers.
 
 ## Notes
 
 If you still have older dashboards with `input_*` entity IDs, replace them with
-native domains (`switch`/`number`/`select`/`time`/`button`) or use one of the
-included dashboard files above.
+native domains (`switch`/`number`/`select`/`time`/`button`) or use the
+included dashboard file above.
 
 Legacy package-era timer entities (`timer.alphaess_*`) are not part of the
 integration-native model.
