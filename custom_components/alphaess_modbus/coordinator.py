@@ -119,7 +119,9 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
         data: dict[str, float | str | None] = {}
 
         self._poll_cycle += 1
-        is_slow_cycle = (self._poll_cycle % self._slow_poll_every) == 0
+        # First refresh reads all sensors so entities are immediately available.
+        is_first_refresh = self._poll_cycle == 1
+        is_slow_cycle = is_first_refresh or ((self._poll_cycle % self._slow_poll_every) == 0)
 
         # ── Read raw Modbus registers ────────────────────────────────
         for desc in (*CORE_SENSOR_DESCRIPTIONS, *INTERNAL_REGISTER_DESCRIPTIONS):
