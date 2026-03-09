@@ -362,6 +362,8 @@ sections:
             name: ISO Version
           - entity: sensor.alphaess_inverter_version
             name: Inverter Version
+          - entity: sensor.alphaess_inverter_slave_version
+            name: Inverter Slave Version
           - entity: sensor.alphaess_inverter_arm_version
             name: Inverter ARM Version
         title: Other
