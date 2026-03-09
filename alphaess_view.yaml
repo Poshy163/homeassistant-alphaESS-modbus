@@ -35,6 +35,8 @@ sections:
           - type: section
           - entity: switch.alphaess_helper_force_charging
             name: Force Charging
+          - entity: sensor.alphaess_force_charging_time_remaining
+            name: Time Remaining
           - entity: number.alphaess_helper_force_charging_duration
             name: Duration
           - entity: number.alphaess_template_force_charging_power
@@ -44,6 +46,8 @@ sections:
           - type: section
           - entity: switch.alphaess_helper_force_discharging
             name: Force Discharging
+          - entity: sensor.alphaess_force_discharging_time_remaining
+            name: Time Remaining
           - entity: number.alphaess_helper_force_discharging_duration
             name: Duration
           - entity: number.alphaess_template_force_discharging_power
@@ -53,6 +57,8 @@ sections:
           - type: section
           - entity: switch.alphaess_helper_force_export
             name: Force Export
+          - entity: sensor.alphaess_force_export_time_remaining
+            name: Time Remaining
           - entity: number.alphaess_helper_force_export_duration
             name: Duration
           - entity: number.alphaess_template_force_export_power
@@ -175,11 +181,15 @@ sections:
           - type: section
           - entity: switch.alphaess_helper_dispatch
             name: Dispatch
+          - entity: sensor.alphaess_dispatch_time_remaining
+            name: Time Remaining
           - entity: button.alphaess_helper_dispatch_reset_full
             name: Dispatch Reset
           - type: section
           - entity: switch.alphaess_helper_excess_export
             name: Excess Export
+          - entity: sensor.alphaess_excess_export_time_remaining
+            name: Time Remaining
           - entity: switch.alphaess_helper_excess_export_pause
             name: Excess Export Pause
             icon: mdi:pause

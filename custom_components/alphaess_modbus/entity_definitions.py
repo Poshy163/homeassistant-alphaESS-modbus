@@ -509,6 +509,44 @@ BUTTON_DEFINITIONS: tuple[ButtonDefinition, ...] = (
 )
 
 
+@dataclass(frozen=True, kw_only=True)
+class DispatchTimerSensorDefinition:
+    """Definition for a dispatch time-remaining sensor."""
+
+    key: str
+    name: str
+    switch_key: str
+
+
+DISPATCH_TIMER_DEFINITIONS: tuple[DispatchTimerSensorDefinition, ...] = (
+    DispatchTimerSensorDefinition(
+        key="force_charging_time_remaining",
+        name="Force Charging Time Remaining",
+        switch_key="force_charging_switch",
+    ),
+    DispatchTimerSensorDefinition(
+        key="force_discharging_time_remaining",
+        name="Force Discharging Time Remaining",
+        switch_key="force_discharging_switch",
+    ),
+    DispatchTimerSensorDefinition(
+        key="force_export_time_remaining",
+        name="Force Export Time Remaining",
+        switch_key="force_export_switch",
+    ),
+    DispatchTimerSensorDefinition(
+        key="dispatch_time_remaining",
+        name="Dispatch Time Remaining",
+        switch_key="dispatch_switch",
+    ),
+    DispatchTimerSensorDefinition(
+        key="excess_export_time_remaining",
+        name="Excess Export Time Remaining",
+        switch_key="excess_export_switch",
+    ),
+)
+
+
 BATTERY_FULL_BINARY_SENSOR = BinarySensorDefinition(
     key="battery_full",
     name="Battery Full",

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time as time_mod
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
@@ -86,12 +87,16 @@ class _AlphaESSDispatchSwitch(AlphaESSBaseEntity, SwitchEntity):
         for sw in self._group:
             if sw is not self and sw._is_on:
                 sw._is_on = False
+                self._runtime.params.pop(f"_{sw._key}_started_at", None)
+                self._runtime.params.pop(f"_{sw._key}_duration_s", None)
                 sw.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off — reset dispatch."""
         await self._dispatch_reset()
         self._is_on = False
+        self._runtime.params.pop(f"_{self._key}_started_at", None)
+        self._runtime.params.pop(f"_{self._key}_duration_s", None)
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
@@ -138,6 +143,7 @@ class AlphaESSDispatchProfileSwitch(_AlphaESSDispatchSwitch):
         await self._dispatch_reset()
         await self._turn_off_others()
 
+        dispatched = False
         if (not self._desc.use_excess_power) or power_kw > 0:
             vals = pack_dispatch_payload(
                 mode=mode,
@@ -146,8 +152,12 @@ class AlphaESSDispatchProfileSwitch(_AlphaESSDispatchSwitch):
                 cutoff_soc=cutoff,
             )
             await self._hub.async_write_registers(REG_DISPATCH_START, vals)
+            dispatched = True
 
         self._is_on = True
+        if dispatched:
+            params[f"_{self._desc.key}_started_at"] = time_mod.monotonic()
+            params[f"_{self._desc.key}_duration_s"] = duration * 60
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
