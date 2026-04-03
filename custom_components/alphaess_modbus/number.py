@@ -63,6 +63,8 @@ class AlphaESSWriteNumber(AlphaESSBaseEntity, NumberEntity):
         self._attr_native_max_value = description.max_value
         self._attr_native_step = description.step
         self._attr_mode = description.mode
+        if description.entity_category is not None:
+            self._attr_entity_category = description.entity_category
 
     @property
     def native_value(self) -> float | None:
@@ -91,6 +93,8 @@ class AlphaESSLocalNumber(AlphaESSBaseEntity, NumberEntity):
         self._attr_native_max_value = description.max_value
         self._attr_native_step = description.step
         self._attr_mode = description.mode
+        if description.entity_category is not None:
+            self._attr_entity_category = description.entity_category
 
         # Ensure default exists
         if description.param_key not in self._runtime.params:

@@ -26,9 +26,18 @@ class AlphaESSBaseEntity(CoordinatorEntity[AlphaESSModbusCoordinator]):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             manufacturer="AlphaESS",
             model=self._entry.data.get(CONF_MODEL, "Unknown"),
             name="AlphaESS",
         )
+        # Enrich with live data when available
+        data = self.coordinator.data if self.coordinator.data else {}
+        serial = data.get("inverter_sn")
+        if serial and isinstance(serial, str) and serial.strip():
+            info["serial_number"] = serial.strip()
+        sw_version = data.get("ems_version_normalised")
+        if sw_version and isinstance(sw_version, str):
+            info["sw_version"] = sw_version
+        return info

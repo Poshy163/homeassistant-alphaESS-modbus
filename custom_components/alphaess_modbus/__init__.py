@@ -20,6 +20,14 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SLAVE_ID,
     DOMAIN,
+    SERVICE_DISPATCH,
+    SERVICE_DISPATCH_RESET,
+    SERVICE_FORCE_CHARGE,
+    SERVICE_FORCE_DISCHARGE,
+    SERVICE_FORCE_EXPORT,
+    SERVICE_SET_CHARGE_PERIODS,
+    SERVICE_SET_DISCHARGE_PERIODS,
+    SERVICE_SYNC_DATETIME,
     build_entry_unique_id,
 )
 from .coordinator import AlphaESSModbusCoordinator
@@ -31,7 +39,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR, 
+    Platform.SENSOR,
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SWITCH,
@@ -99,6 +107,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     runtime_data: AlphaESSRuntimeData = hass.data[DOMAIN].pop(entry.entry_id)
     runtime_data.unsubscribe_update_listener()
     await runtime_data.hub.async_close()
+
+    # Remove services when the last config entry is unloaded
+    if not hass.data[DOMAIN]:
+        for service_name in (
+            SERVICE_FORCE_CHARGE,
+            SERVICE_FORCE_DISCHARGE,
+            SERVICE_FORCE_EXPORT,
+            SERVICE_DISPATCH,
+            SERVICE_DISPATCH_RESET,
+            SERVICE_SYNC_DATETIME,
+            SERVICE_SET_CHARGE_PERIODS,
+            SERVICE_SET_DISCHARGE_PERIODS,
+        ):
+            hass.services.async_remove(DOMAIN, service_name)
 
     return unload_ok
 

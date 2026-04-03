@@ -1,12 +1,11 @@
 force_charge:
-  name: Force charge
-  description: Start force charging using Dispatch Mode 2.
   fields:
     entry_id:
       required: false
       example: "abc123"
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
     power_kw:
       required: false
       default: 5
@@ -36,13 +35,12 @@ force_charge:
           unit_of_measurement: "%"
 
 force_discharge:
-  name: Force discharge
-  description: Start force discharging using Dispatch Mode 2.
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
     power_kw:
       required: false
       default: 5
@@ -72,13 +70,12 @@ force_discharge:
           unit_of_measurement: "%"
 
 force_export:
-  name: Force export
-  description: Start force export behavior (currently mapped to force discharge core path).
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
     power_kw:
       required: false
       default: 5
@@ -108,13 +105,12 @@ force_export:
           unit_of_measurement: "%"
 
 dispatch:
-  name: Dispatch
-  description: Execute generic dispatch write sequence.
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
     mode:
       required: false
       default: 2
@@ -152,70 +148,65 @@ dispatch:
           unit_of_measurement: "%"
 
 dispatch_reset:
-  name: Dispatch reset
-  description: Reset all dispatch registers to defaults.
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
 
 sync_datetime:
-  name: Synchronise date and time
-  description: Write Home Assistant local date/time to inverter registers.
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
 
 set_charging_periods:
-  name: Set charging periods
-  description: Write charging period 1 and 2 start/stop times.
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
     period_1_start:
       required: true
       selector:
-        text:
+        time:
     period_1_stop:
       required: true
       selector:
-        text:
+        time:
     period_2_start:
       required: true
       selector:
-        text:
+        time:
     period_2_stop:
       required: true
       selector:
-        text:
+        time:
 
 set_discharging_periods:
-  name: Set discharging periods
-  description: Write discharging period 1 and 2 start/stop times.
   fields:
     entry_id:
       required: false
       selector:
-        text:
+        config_entry:
+          integration: alphaess_modbus
     period_1_start:
       required: true
       selector:
-        text:
+        time:
     period_1_stop:
       required: true
       selector:
-        text:
+        time:
     period_2_start:
       required: true
       selector:
-        text:
+        time:
     period_2_stop:
       required: true
       selector:
-        text:
-
+        time:

@@ -6,6 +6,7 @@
   ],
   "config_flow": true,
   "dependencies": [
+    "diagnostics",
     "frontend",
     "http"
   ],
@@ -16,6 +17,6 @@
   "loggers": [
     "pymodbus"
   ],
-  "requirements": [],
+  "requirements": ["pymodbus>=3.6.0"],
   "version": "0.0.2"
 }

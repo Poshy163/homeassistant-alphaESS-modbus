@@ -14,13 +14,16 @@ from .const import (
     AC_LIMIT_OPTIONS,
     CONF_AC_LIMIT_KW,
     CONF_MODEL,
+    CONF_POLL_FREQ,
     CONF_SLAVE_ID,
     DEFAULT_AC_LIMIT_KW,
+    DEFAULT_POLL_FREQ,
     DEFAULT_PORT,
     REG_INVERTER_SN,
     DEFAULT_SLAVE_ID,
     DOMAIN,
     INVERTER_MODELS,
+    POLL_FREQUENCY_OPTIONS,
     build_entry_unique_id,
 )
 
@@ -70,6 +73,13 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_model"
             else:
                 serial_number = await _async_read_inverter_serial(host, port, slave_id)
+                if serial_number is None:
+                    # Inverter unreachable — show warning but allow setup
+                    _LOGGER.warning(
+                        "Could not connect to inverter at %s:%s to read serial; "
+                        "proceeding with TCP-based unique ID",
+                        host, port,
+                    )
                 unique = build_entry_unique_id(host, port, slave_id, serial_number=serial_number)
                 await self.async_set_unique_id(unique)
                 self._abort_if_unique_id_configured()
@@ -95,6 +105,10 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_AC_LIMIT_KW,
                     default=DEFAULT_AC_LIMIT_KW,
                 ): vol.In(AC_LIMIT_OPTIONS),
+                vol.Required(
+                    CONF_POLL_FREQ,
+                    default=DEFAULT_POLL_FREQ,
+                ): vol.In(POLL_FREQUENCY_OPTIONS),
             }
         )
 
@@ -112,7 +126,36 @@ class AlphaESSModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_AC_LIMIT_KW,
                     default=merged.get(CONF_AC_LIMIT_KW, DEFAULT_AC_LIMIT_KW),
                 ): vol.In(AC_LIMIT_OPTIONS),
+                vol.Required(
+                    CONF_POLL_FREQ,
+                    default=merged.get(CONF_POLL_FREQ, DEFAULT_POLL_FREQ),
+                ): vol.In(POLL_FREQUENCY_OPTIONS),
             }
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict | None = None
+    ) -> FlowResult:
+        """Handle reconfiguration of an existing entry."""
+        errors: dict[str, str] = {}
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        if entry is None:
+            return self.async_abort(reason="unknown")
+
+        if user_input is not None:
+            merged = {**entry.data, **user_input}
+            if not merged.get(CONF_HOST):
+                errors["base"] = "invalid_connection"
+            else:
+                self.hass.config_entries.async_update_entry(entry, data=merged)
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reconfigure_successful")
+
+        schema = self._build_options_schema(entry.data, entry.options)
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
+            errors=errors,
         )
 
     @staticmethod

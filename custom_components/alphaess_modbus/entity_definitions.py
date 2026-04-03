@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from homeassistant.components.number import NumberMode
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTime
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
     AC_LIMIT_OPTIONS,
@@ -61,6 +62,7 @@ class WriteNumberDefinition:
     step: float
     unit: str | None = None
     mode: NumberMode = NumberMode.SLIDER
+    entity_category: EntityCategory | None = EntityCategory.CONFIG
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -76,6 +78,7 @@ class LocalNumberDefinition:
     unit: str | None = None
     mode: NumberMode = NumberMode.SLIDER
     use_ac_limit_max: bool = False
+    entity_category: EntityCategory | None = EntityCategory.CONFIG
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -137,6 +140,7 @@ class DispatchSwitchDefinition:
     negate_power: bool = False
     use_dispatch_mode_from_runtime: bool = False
     use_excess_power: bool = False
+    entity_category: EntityCategory | None = EntityCategory.CONFIG
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -145,6 +149,7 @@ class ToggleSwitchDefinition:
 
     key: str
     name: str
+    entity_category: EntityCategory | None = EntityCategory.CONFIG
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -153,6 +158,7 @@ class ButtonDefinition:
 
     key: str
     name: str
+    entity_category: EntityCategory | None = EntityCategory.CONFIG
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -84,7 +84,6 @@ B3_POWER_KEYS: set[str] = {
     "backup_power_inverter",
 }
 
-PLATFORMS = ["sensor", "number", "select", "switch", "button", "time"]
 
 # ─────────────────────── Service names ───────────────────────────────────
 

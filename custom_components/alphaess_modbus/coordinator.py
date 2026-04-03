@@ -5,7 +5,7 @@ import logging
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     B3_POWER_KEYS,
@@ -108,6 +108,8 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
         self._slow_poll_every = slow_poll_every
         self._regular_poll_every = regular_poll_every
         self._poll_cycle: int = 0
+        self._consecutive_failures: int = 0
+        self._MAX_CONSECUTIVE_FAILURES = 3
 
         _LOGGER.debug(
             "AlphaESS polling profile selected: poll_freq=%s interval=%ss slow_poll_every=%s model=%s",
@@ -211,6 +213,30 @@ class AlphaESSModbusCoordinator(DataUpdateCoordinator[dict[str, float | str | No
             if desc.key in _SERIAL_SENSOR_KEYS:
                 _LOGGER.debug("[SN] %s decoded numeric value=%s", desc.key, value)
             data[desc.key] = value
+
+        # ── Track consecutive total poll failures ────────────────────
+        # Count how many sensors were actually read this cycle (excluding
+        # stale carry-forward values from skipped tiers).
+        read_keys = {
+            desc.key
+            for desc in (*CORE_SENSOR_DESCRIPTIONS, *INTERNAL_REGISTER_DESCRIPTIONS)
+            if not (desc.slow_poll and not is_slow_cycle)
+            and not (
+                self._poll_freq == "fast"
+                and desc.key not in FAST_POLL_1S_KEYS
+                and not is_regular_cycle
+            )
+        }
+        all_none = all(data.get(k) is None for k in read_keys) if read_keys else False
+        if all_none and read_keys:
+            self._consecutive_failures += 1
+            if self._consecutive_failures >= self._MAX_CONSECUTIVE_FAILURES:
+                raise UpdateFailed(
+                    f"Failed to read any Modbus register for "
+                    f"{self._consecutive_failures} consecutive cycles"
+                )
+        else:
+            self._consecutive_failures = 0
 
         # ── Compute derived / template sensors ───────────────────────
         try:

@@ -12,6 +12,7 @@ from datetime import time
 from homeassistant.components.time import TimeEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -52,6 +53,7 @@ class AlphaESSPeriodTimeEntity(AlphaESSBaseEntity, TimeEntity):
         self._desc = desc
         self._attr_name = desc.name
         self._attr_icon = "mdi:clock-outline"
+        self._attr_entity_category = EntityCategory.CONFIG
 
     @property
     def native_value(self) -> time | None:

@@ -9,7 +9,20 @@
           "port": "Port",
           "slave_id": "Slave ID",
           "model": "Inverter model",
-          "ac_limit_kw": "Inverter AC limit (kW)"
+          "ac_limit_kw": "Inverter AC limit (kW)",
+          "poll_freq": "Polling frequency"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure AlphaESS Modbus",
+        "description": "Update connection settings for your AlphaESS inverter",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "model": "Inverter model",
+          "ac_limit_kw": "Inverter AC limit (kW)",
+          "poll_freq": "Polling frequency"
         }
       }
     },
@@ -20,7 +33,8 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "Device is already configured"
+      "already_configured": "Device is already configured",
+      "reconfigure_successful": "Configuration updated successfully"
     }
   },
   "options": {
@@ -32,7 +46,174 @@
           "port": "Port",
           "slave_id": "Slave ID",
           "model": "Inverter model",
-          "ac_limit_kw": "Inverter AC limit (kW)"
+          "ac_limit_kw": "Inverter AC limit (kW)",
+          "poll_freq": "Polling frequency"
+        }
+      }
+    }
+  },
+  "services": {
+    "force_charge": {
+      "name": "Force charge",
+      "description": "Start force charging using Dispatch Mode 2.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        },
+        "power_kw": {
+          "name": "Power (kW)",
+          "description": "Charging power in kilowatts."
+        },
+        "duration_min": {
+          "name": "Duration (min)",
+          "description": "Charging duration in minutes."
+        },
+        "cutoff_soc": {
+          "name": "Cutoff SoC (%)",
+          "description": "Stop charging when battery reaches this SoC."
+        }
+      }
+    },
+    "force_discharge": {
+      "name": "Force discharge",
+      "description": "Start force discharging using Dispatch Mode 2.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        },
+        "power_kw": {
+          "name": "Power (kW)",
+          "description": "Discharging power in kilowatts."
+        },
+        "duration_min": {
+          "name": "Duration (min)",
+          "description": "Discharging duration in minutes."
+        },
+        "cutoff_soc": {
+          "name": "Cutoff SoC (%)",
+          "description": "Stop discharging when battery reaches this SoC."
+        }
+      }
+    },
+    "force_export": {
+      "name": "Force export",
+      "description": "Start force export (mapped to force discharge path).",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        },
+        "power_kw": {
+          "name": "Power (kW)",
+          "description": "Export power in kilowatts."
+        },
+        "duration_min": {
+          "name": "Duration (min)",
+          "description": "Export duration in minutes."
+        },
+        "cutoff_soc": {
+          "name": "Cutoff SoC (%)",
+          "description": "Stop exporting when battery reaches this SoC."
+        }
+      }
+    },
+    "dispatch": {
+      "name": "Dispatch",
+      "description": "Execute generic dispatch write sequence.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Dispatch mode number (e.g. 2 for SoC control)."
+        },
+        "power_kw": {
+          "name": "Power (kW)",
+          "description": "Dispatch power in kilowatts (negative = charge)."
+        },
+        "duration_min": {
+          "name": "Duration (min)",
+          "description": "Dispatch duration in minutes."
+        },
+        "cutoff_soc": {
+          "name": "Cutoff SoC (%)",
+          "description": "Battery SoC cutoff threshold."
+        }
+      }
+    },
+    "dispatch_reset": {
+      "name": "Dispatch reset",
+      "description": "Reset all dispatch registers to defaults.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        }
+      }
+    },
+    "sync_datetime": {
+      "name": "Synchronise date and time",
+      "description": "Write Home Assistant local date/time to inverter registers.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        }
+      }
+    },
+    "set_charging_periods": {
+      "name": "Set charging periods",
+      "description": "Write charging period 1 and 2 start/stop times.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        },
+        "period_1_start": {
+          "name": "Period 1 start",
+          "description": "Start time for charging period 1 (HH:MM)."
+        },
+        "period_1_stop": {
+          "name": "Period 1 stop",
+          "description": "Stop time for charging period 1 (HH:MM)."
+        },
+        "period_2_start": {
+          "name": "Period 2 start",
+          "description": "Start time for charging period 2 (HH:MM)."
+        },
+        "period_2_stop": {
+          "name": "Period 2 stop",
+          "description": "Stop time for charging period 2 (HH:MM)."
+        }
+      }
+    },
+    "set_discharging_periods": {
+      "name": "Set discharging periods",
+      "description": "Write discharging period 1 and 2 start/stop times.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "The config entry to target (optional if only one inverter)."
+        },
+        "period_1_start": {
+          "name": "Period 1 start",
+          "description": "Start time for discharging period 1 (HH:MM)."
+        },
+        "period_1_stop": {
+          "name": "Period 1 stop",
+          "description": "Stop time for discharging period 1 (HH:MM)."
+        },
+        "period_2_start": {
+          "name": "Period 2 start",
+          "description": "Start time for discharging period 2 (HH:MM)."
+        },
+        "period_2_stop": {
+          "name": "Period 2 stop",
+          "description": "Stop time for discharging period 2 (HH:MM)."
         }
       }
     }

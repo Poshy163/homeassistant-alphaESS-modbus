@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import time as time_mod
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
@@ -135,7 +135,7 @@ class AlphaESSDispatchTimerSensor(AlphaESSBaseEntity, SensorEntity):
         self._attr_name = description.name
         self._attr_native_unit_of_measurement = UnitOfTime.MINUTES
         self._attr_device_class = SensorDeviceClass.DURATION
-        self._attr_state_class = None
+        self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_suggested_display_precision = 1
 
     @property

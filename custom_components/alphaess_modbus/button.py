@@ -22,6 +22,11 @@ from .entity import AlphaESSBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Named references for clarity (avoids fragile index-based access)
+_DISPATCH_RESET = BUTTON_DEFINITIONS[0]
+_DISPATCH_RESET_FULL = BUTTON_DEFINITIONS[1]
+_SYNC_DATETIME = BUTTON_DEFINITIONS[2]
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -46,9 +51,11 @@ class AlphaESSDispatchResetButton(AlphaESSBaseEntity, ButtonEntity):
     """Reset all dispatch registers to zero."""
 
     def __init__(self, coordinator, entry, hub) -> None:
-        super().__init__(coordinator, entry, BUTTON_DEFINITIONS[0].key)
+        super().__init__(coordinator, entry, _DISPATCH_RESET.key)
         self._hub = hub
-        self._attr_name = BUTTON_DEFINITIONS[0].name
+        self._attr_name = _DISPATCH_RESET.name
+        if _DISPATCH_RESET.entity_category is not None:
+            self._attr_entity_category = _DISPATCH_RESET.entity_category
 
     async def async_press(self) -> None:
         """Write zeros to dispatch registers."""
@@ -60,10 +67,12 @@ class AlphaESSDispatchResetFullButton(AlphaESSBaseEntity, ButtonEntity):
     """Reset dispatch registers and turn off all dispatch switches."""
 
     def __init__(self, coordinator, entry, hub, runtime) -> None:
-        super().__init__(coordinator, entry, BUTTON_DEFINITIONS[1].key)
+        super().__init__(coordinator, entry, _DISPATCH_RESET_FULL.key)
         self._hub = hub
         self._runtime = runtime
-        self._attr_name = BUTTON_DEFINITIONS[1].name
+        self._attr_name = _DISPATCH_RESET_FULL.name
+        if _DISPATCH_RESET_FULL.entity_category is not None:
+            self._attr_entity_category = _DISPATCH_RESET_FULL.entity_category
 
     async def async_press(self) -> None:
         """Write zeros to dispatch and turn off all dispatch switches."""
@@ -88,9 +97,11 @@ class AlphaESSSyncDateTimeButton(AlphaESSBaseEntity, ButtonEntity):
     """Synchronise inverter date/time with HA system time."""
 
     def __init__(self, coordinator, entry, hub) -> None:
-        super().__init__(coordinator, entry, BUTTON_DEFINITIONS[2].key)
+        super().__init__(coordinator, entry, _SYNC_DATETIME.key)
         self._hub = hub
-        self._attr_name = BUTTON_DEFINITIONS[2].name
+        self._attr_name = _SYNC_DATETIME.name
+        if _SYNC_DATETIME.entity_category is not None:
+            self._attr_entity_category = _SYNC_DATETIME.entity_category
 
     async def async_press(self) -> None:
         """Write current date/time in BCD encoding to the inverter."""

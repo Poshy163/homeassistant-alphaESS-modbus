@@ -114,6 +114,8 @@ class AlphaESSDispatchProfileSwitch(_AlphaESSDispatchSwitch):
     ) -> None:
         super().__init__(coordinator, entry, hub, runtime, description.key, description.name)
         self._desc = description
+        if description.entity_category is not None:
+            self._attr_entity_category = description.entity_category
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         params = self._runtime.params
@@ -170,6 +172,8 @@ class AlphaESSToggleSwitch(AlphaESSBaseEntity, SwitchEntity):
         self._runtime = runtime
         self._attr_name = description.name
         self._is_on = False
+        if hasattr(description, "entity_category") and description.entity_category is not None:
+            self._attr_entity_category = description.entity_category
 
     @property
     def is_on(self) -> bool:

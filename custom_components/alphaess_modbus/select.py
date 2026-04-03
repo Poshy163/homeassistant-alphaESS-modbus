@@ -6,6 +6,7 @@ import logging
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -57,6 +58,7 @@ class AlphaESSTimePeriodControlSelect(AlphaESSBaseEntity, SelectEntity):
         self._hub = hub
         self._attr_name = TIME_PERIOD_CONTROL_SELECT.name
         self._attr_options = list(TIME_PERIOD_CONTROL_SELECT.options.keys())
+        self._attr_entity_category = EntityCategory.CONFIG
 
     @property
     def current_option(self) -> str | None:
@@ -81,6 +83,7 @@ class AlphaESSDispatchModeSelect(AlphaESSBaseEntity, SelectEntity):
         self._runtime = runtime
         self._attr_name = DISPATCH_MODE_SELECT.name
         self._attr_options = list(DISPATCH_MODE_SELECT.options.keys())
+        self._attr_entity_category = EntityCategory.CONFIG
 
         # Initialise to default if not set
         if DISPATCH_MODE_SELECT.param_key not in self._runtime.params:
@@ -116,6 +119,7 @@ class AlphaESSInverterACLimitSelect(AlphaESSBaseEntity, SelectEntity):
         self._runtime = runtime
         self._attr_name = AC_LIMIT_SELECT.name
         self._attr_options = [f"{v} kW" for v in AC_LIMIT_SELECT.options_kw]
+        self._attr_entity_category = EntityCategory.CONFIG
 
         # Initialise default
         if AC_LIMIT_SELECT.param_key not in self._runtime.params:
