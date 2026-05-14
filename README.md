@@ -1,7 +1,7 @@
 # homeassistant-alphaESS-modbus
 
 > [!WARNING]
-> **This integration is deprecated.** Use [senalse/ha-alphaess-modbus](https://github.com/senalse/ha-alphaess-modbus) for new installs. Existing users should plan to migrate.rd.
+> **This integration is deprecated.** Use [senalse/ha-alphaess-modbus](https://github.com/senalse/ha-alphaess-modbus) for new installs. Existing users should plan to migrate
 
 ![Project Stage](https://img.shields.io/badge/project%20stage-deprecated-red.svg?style=for-the-badge)
 ![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)
