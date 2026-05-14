@@ -1,6 +1,9 @@
 # homeassistant-alphaESS-modbus
 
-![Project Stage](https://img.shields.io/badge/project%20stage-in%20production-green.svg?style=for-the-badge)
+> [!WARNING]
+> **This integration is deprecated.** Use [senalse/ha-alphaess-modbus](https://github.com/senalse/ha-alphaess-modbus) for new installs. Existing users should plan to migrate.rd.
+
+![Project Stage](https://img.shields.io/badge/project%20stage-deprecated-red.svg?style=for-the-badge)
 ![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)
 
 AlphaESS inverter integration for Home Assistant via Modbus TCP, packaged for HACS.
